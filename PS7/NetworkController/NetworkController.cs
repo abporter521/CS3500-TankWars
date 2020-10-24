@@ -21,14 +21,17 @@ namespace NetworkUtil
         /// <param name="port">The the port to listen on</param>
         public static TcpListener StartServer(Action<SocketState> toCall, int port)
         {
+            
             try
             {
                 //Starts TcpListner on the specified port
                 TcpListener listener = new TcpListener(IPAddress.Any, port);
                 listener.Start();
+                //Create tuple to pass information
+                Tuple<TcpListener, Action<SocketState>> serverInfo = new Tuple<TcpListener, Action<SocketState>>(listener, toCall);
 
                 //Starts an event-loop to accept new clients
-                listener.BeginAcceptSocket(AcceptNewClient, null);
+                listener.BeginAcceptSocket(AcceptNewClient, serverInfo);
 
                 //Return the TcpListener
                 return listener;
@@ -63,7 +66,34 @@ namespace NetworkUtil
         /// 1) a delegate so the user can take action (a SocketState Action), and 2) the TcpListener</param>
         private static void AcceptNewClient(IAsyncResult ar)
         {
-            throw new NotImplementedException();
+           
+                //Have listener to repeat event loop
+                Tuple<TcpListener, Action<SocketState>> serverInfo = (Tuple<TcpListener, Action<SocketState>>)ar.AsyncState;
+            try
+            {
+                //Stabilize accept using tcplistener in the tuple
+                Socket newClient = serverInfo.Item1.EndAcceptSocket(ar);
+
+                //Create new SocketState with info from tuple (Action delegate) and new socket
+                SocketState state = new SocketState(serverInfo.Item2, newClient);
+
+                //Invoke OnNetworkAction
+                state.OnNetworkAction(state);
+
+                //Trigger event-loop with TcpListener
+                serverInfo.Item1.BeginAcceptSocket(AcceptNewClient, serverInfo);
+            }
+            catch (Exception)
+            {
+                //Create new socket
+                Socket newClient = serverInfo.Item1.EndAcceptSocket(ar);
+                //Create new SocketState
+                SocketState errorState = new SocketState(serverInfo.Item2, newClient);
+                //Set error flag to true
+                errorState.ErrorOccured = true;
+                //Invoke OnNetworkAction with error flag true
+                errorState.OnNetworkAction(errorState);
+            }
         }
 
         /// <summary>
