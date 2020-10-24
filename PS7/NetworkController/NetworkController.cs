@@ -36,7 +36,7 @@ namespace NetworkUtil
                 //Return the TcpListener
                 return listener;
             }
-            catch (Exception e)
+            catch (Exception)
             {
 
                 //DO SOMETHING WITH ERRORS HERE
@@ -91,6 +91,8 @@ namespace NetworkUtil
                 SocketState errorState = new SocketState(serverInfo.Item2, newClient);
                 //Set error flag to true
                 errorState.ErrorOccured = true;
+                // Add error message and display to console
+                errorState.ErrorMessage = "Connection interrupted";
                 //Invoke OnNetworkAction with error flag true
                 errorState.OnNetworkAction(errorState);
             }
@@ -157,6 +159,11 @@ namespace NetworkUtil
                 if (!foundIPV4)
                 {
                     // TODO: Indicate an error to the user, as specified in the documentation
+                    SocketState errorState = new SocketState(toCall, new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp));
+                    errorState.ErrorOccured = true;
+                    errorState.OnNetworkAction(errorState);
+                    errorState.ErrorMessage = "IPV4 addresses were not found";
+                    toCall.Invoke(errorState);
                 }
             }
             catch (Exception)
@@ -168,7 +175,11 @@ namespace NetworkUtil
                 }
                 catch (Exception)
                 {
-                    // TODO: Indicate an error to the user, as specified in the documentation
+                    SocketState invalidIpAddress = new SocketState(toCall, new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp));
+                    invalidIpAddress.ErrorOccured = true;
+                    invalidIpAddress.OnNetworkAction(invalidIpAddress);
+                    invalidIpAddress.ErrorMessage = "The IP address entered is not valid";
+                    toCall.Invoke(invalidIpAddress);
                 }
             }
 
@@ -180,6 +191,24 @@ namespace NetworkUtil
             // game like ours will be 
             socket.NoDelay = true;
 
+            // Connect using a timeout (3 seconds)
+            IAsyncResult result = socket.BeginConnect(ipAddress, port, null, null);
+            // boolean flag to signal timeout, end connection if is not made after 3 seconds
+            bool success = result.AsyncWaitHandle.WaitOne(3000, true);
+            // Check if timeout condition has been met
+            if(success)
+            {
+                socket.EndConnect(result);
+            }
+            // Connection has timed out and we want to close the socket and produce an error
+            else
+            {
+                socket.Close();
+                SocketState timeoutState = new SocketState(toCall, new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp));
+                timeoutState.ErrorOccured = true;
+                timeoutState.ErrorMessage = "Conection timed out";
+                timeoutState.OnNetworkAction(timeoutState);
+            }
             // TODO: Finish the remainder of the connection process as specified.
         }
 
