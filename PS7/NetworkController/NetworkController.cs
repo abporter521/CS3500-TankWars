@@ -21,7 +21,7 @@ namespace NetworkUtil
         /// <param name="port">The the port to listen on</param>
         public static TcpListener StartServer(Action<SocketState> toCall, int port)
         {
-            
+
             try
             {
                 //Starts TcpListner on the specified port
@@ -43,7 +43,7 @@ namespace NetworkUtil
                 Console.WriteLine("StartServer caught some error.");
                 return new TcpListener(IPAddress.Any, port);
             }
-            
+
         }
 
         /// <summary>
@@ -66,9 +66,9 @@ namespace NetworkUtil
         /// 1) a delegate so the user can take action (a SocketState Action), and 2) the TcpListener</param>
         private static void AcceptNewClient(IAsyncResult ar)
         {
-           
-                //Have listener to repeat event loop
-                Tuple<TcpListener, Action<SocketState>> serverInfo = (Tuple<TcpListener, Action<SocketState>>)ar.AsyncState;
+
+            //Have listener to repeat event loop
+            Tuple<TcpListener, Action<SocketState>> serverInfo = (Tuple<TcpListener, Action<SocketState>>)ar.AsyncState;
             try
             {
                 //Stabilize accept using tcplistener in the tuple
@@ -161,9 +161,8 @@ namespace NetworkUtil
                     // TODO: Indicate an error to the user, as specified in the documentation
                     SocketState errorState = new SocketState(toCall, new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp));
                     errorState.ErrorOccured = true;
-                    errorState.OnNetworkAction(errorState);
                     errorState.ErrorMessage = "IPV4 addresses were not found";
-                    toCall.Invoke(errorState);
+                    errorState.OnNetworkAction(errorState);
                 }
             }
             catch (Exception)
@@ -177,14 +176,14 @@ namespace NetworkUtil
                 {
                     SocketState invalidIpAddress = new SocketState(toCall, new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp));
                     invalidIpAddress.ErrorOccured = true;
-                    invalidIpAddress.OnNetworkAction(invalidIpAddress);
                     invalidIpAddress.ErrorMessage = "The IP address entered is not valid";
-                    toCall.Invoke(invalidIpAddress);
+                    invalidIpAddress.OnNetworkAction(invalidIpAddress);
                 }
             }
 
             // Create a TCP/IP socket.
             Socket socket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            Tuple<Socket, Action<SocketState>> info = new Tuple<Socket, Action<SocketState>>(socket, toCall);
 
             // This disables Nagle's algorithm (google if curious!)
             // Nagle's algorithm can cause problems for a latency-sensitive 
@@ -192,13 +191,15 @@ namespace NetworkUtil
             socket.NoDelay = true;
 
             // Connect using a timeout (3 seconds)
-            IAsyncResult result = socket.BeginConnect(ipAddress, port, null, null);
+            //Saves the result of the begin connect without invoking callback to verify timeout does not happen
+            IAsyncResult result = socket.BeginConnect(ipAddress, port, null, info);
             // boolean flag to signal timeout, end connection if is not made after 3 seconds
             bool success = result.AsyncWaitHandle.WaitOne(3000, true);
             // Check if timeout condition has been met
-            if(success)
+            if (success)
             {
-                socket.EndConnect(result);
+                //Call ConnectedCallBack with the info that was saved
+                ConnectedCallback(result);
             }
             // Connection has timed out and we want to close the socket and produce an error
             else
@@ -206,10 +207,11 @@ namespace NetworkUtil
                 socket.Close();
                 SocketState timeoutState = new SocketState(toCall, new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp));
                 timeoutState.ErrorOccured = true;
-                timeoutState.ErrorMessage = "Conection timed out";
+                timeoutState.ErrorMessage = "Connection timed out";
                 timeoutState.OnNetworkAction(timeoutState);
             }
             // TODO: Finish the remainder of the connection process as specified.
+
         }
 
         /// <summary>
@@ -227,7 +229,26 @@ namespace NetworkUtil
         /// <param name="ar">The object asynchronously passed via BeginConnect</param>
         private static void ConnectedCallback(IAsyncResult ar)
         {
-            throw new NotImplementedException();
+            //Decodes the argument into the tuple we passed in
+            Tuple<Socket, Action<SocketState>> info = (Tuple<Socket, Action<SocketState>>)ar.AsyncState;
+            //Tuple item 1 is the socket created in ConnectToServer
+            Socket socket = info.Item1;
+            //Create a new SocketState representing the connection
+            SocketState newState = new SocketState(info.Item2, socket);
+            try
+            {
+                //EndConnect to finalize connection
+                socket.EndConnect(ar);
+                //Invoke the toCall Action
+                info.Item2(newState);
+            }
+            catch
+            {
+                newState.ErrorOccured = true;
+                newState.ErrorMessage = "Connection timed out";
+                newState.OnNetworkAction(newState);
+            }
+
         }
 
 
@@ -249,7 +270,19 @@ namespace NetworkUtil
         /// <param name="state">The SocketState to begin receiving</param>
         public static void GetData(SocketState state)
         {
-            throw new NotImplementedException();
+            try
+            {
+                // Use beginReceive to finalize the the receive and store the data
+                state.TheSocket.BeginReceive(state.buffer, 0, state.buffer.Length, SocketFlags.None, ReceiveCallback, state);
+            } 
+            catch
+            {
+                // If anything goes wrong set socket state's errorOccured to true
+                // and display appropriate message
+                state.ErrorOccured = true;
+                state.ErrorMessage = "Message cannot be received";
+                state.OnNetworkAction(state);
+            }
         }
 
         /// <summary>
@@ -271,7 +304,24 @@ namespace NetworkUtil
         /// </param>
         private static void ReceiveCallback(IAsyncResult ar)
         {
-            throw new NotImplementedException();
+            SocketState state = (SocketState)ar.AsyncState;
+
+            try
+            {
+                int numBytes = state.TheSocket.EndReceive(ar);
+                String text = Encoding.UTF8.GetString(state.buffer, 0, numBytes);
+                state.data.Append(text);
+
+            }
+            catch
+            {
+                // If anything goes wrong set socket state's errorOccured to true
+                // and display appropriate message
+                state.ErrorOccured = true;
+                state.ErrorMessage = "Message cannot be received";
+                state.OnNetworkAction(state);
+            }
+            state.OnNetworkAction(state);
         }
 
         /// <summary>
