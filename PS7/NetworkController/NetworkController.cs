@@ -274,7 +274,7 @@ namespace NetworkUtil
             {
                 // Use beginReceive to finalize the the receive and store the data
                 state.TheSocket.BeginReceive(state.buffer, 0, state.buffer.Length, SocketFlags.None, ReceiveCallback, state);
-            } 
+            }
             catch
             {
                 // If anything goes wrong set socket state's errorOccured to true
@@ -304,13 +304,19 @@ namespace NetworkUtil
         /// </param>
         private static void ReceiveCallback(IAsyncResult ar)
         {
+            //Get SocketState from IAsyncResult
             SocketState state = (SocketState)ar.AsyncState;
 
             try
             {
+                //Get the number of bytes of the information received
                 int numBytes = state.TheSocket.EndReceive(ar);
+                //Convert to UTF8
                 String text = Encoding.UTF8.GetString(state.buffer, 0, numBytes);
+                //Add text to the stringbuilder
                 state.data.Append(text);
+                //Call the saved delegate
+                state.OnNetworkAction(state);
 
             }
             catch
@@ -321,7 +327,6 @@ namespace NetworkUtil
                 state.ErrorMessage = "Message cannot be received";
                 state.OnNetworkAction(state);
             }
-            state.OnNetworkAction(state);
         }
 
         /// <summary>
@@ -336,7 +341,23 @@ namespace NetworkUtil
         /// <returns>True if the send process was started, false if an error occurs or the socket is already closed</returns>
         public static bool Send(Socket socket, string data)
         {
-            throw new NotImplementedException();
+            if (!socket.Connected)
+                return false;
+            try
+            {
+                //convert data to UTF8
+                byte[] messageBytes = Encoding.UTF8.GetBytes(data);
+                // Begin sending the message
+                socket.BeginSend(messageBytes,0, messageBytes.Length, SocketFlags.None, SendCallback, socket);
+                return true;
+            }
+            catch
+            {
+                Console.WriteLine("Send threw");
+                //Closes socket before returning false
+                socket.Close();
+                return false;
+            }
         }
 
         /// <summary>
@@ -352,7 +373,15 @@ namespace NetworkUtil
         /// </param>
         private static void SendCallback(IAsyncResult ar)
         {
-            throw new NotImplementedException();
+            Socket socket = (Socket)ar.AsyncState;
+            try
+            {
+                socket.EndSend(ar);
+            } 
+            catch
+            {
+                Console.WriteLine("Send callback threw");
+            }
         }
 
 
@@ -369,7 +398,28 @@ namespace NetworkUtil
         /// <returns>True if the send process was started, false if an error occurs or the socket is already closed</returns>
         public static bool SendAndClose(Socket socket, string data)
         {
-            throw new NotImplementedException();
+            // Check if the socket is connected and do not attempt to send
+            // if it is not
+            if(!socket.Connected)
+            {
+                return false;
+            }
+            try
+            {
+                //convert data to UTF8
+                byte[] messageBytes = Encoding.UTF8.GetBytes(data);
+                // Begin sending the message
+                socket.BeginSend(messageBytes, 0, messageBytes.Length, SocketFlags.None, SendCallback, socket);
+                return true;
+            } 
+            catch
+            {
+                Console.WriteLine("Send and close threw");
+                // Closes the socket before returning false
+                socket.Close();
+                return false;
+            }
+           
         }
 
         /// <summary>
@@ -387,7 +437,17 @@ namespace NetworkUtil
         /// </param>
         private static void SendAndCloseCallback(IAsyncResult ar)
         {
-            throw new NotImplementedException();
+            Socket newSocket = (Socket)ar.AsyncState;
+            try
+            {
+                newSocket.EndSend(ar);
+                newSocket.Close();
+            } 
+            catch
+            {
+                Console.WriteLine("send and close callback threw");
+                newSocket.Close();
+            }
         }
 
     }
