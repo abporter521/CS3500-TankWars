@@ -1,10 +1,17 @@
 ﻿using System;
+using System.Data;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
 namespace NetworkUtil
 {
+    /// <summary>
+    /// This is our submission for PS7.  Team FlyBoys
+    /// 
+    /// Authors - Adam Scott and Andrew Porter
+    /// 
+    /// </summary>
 
     public static class Networking
     {
@@ -39,8 +46,9 @@ namespace NetworkUtil
             catch (Exception)
             {
 
-                //DO SOMETHING WITH ERRORS HERE
+                //Sanity check to see if throw was caught
                 Console.WriteLine("StartServer caught some error.");
+                //Return new TcpListener
                 return new TcpListener(IPAddress.Any, port);
             }
 
@@ -67,11 +75,11 @@ namespace NetworkUtil
         private static void AcceptNewClient(IAsyncResult ar)
         {
 
-            //Have listener to repeat event loop
+            //Extract tuple from IAsyncResult. Tuple contains TcpListener and Action delegate
             Tuple<TcpListener, Action<SocketState>> serverInfo = (Tuple<TcpListener, Action<SocketState>>)ar.AsyncState;
             try
             {
-                //Stabilize accept using tcplistener in the tuple
+                //Finalize accept using tcplistener in the tuple
                 Socket newClient = serverInfo.Item1.EndAcceptSocket(ar);
 
                 //Create new SocketState with info from tuple (Action delegate) and new socket
@@ -86,9 +94,9 @@ namespace NetworkUtil
             catch (Exception)
             {
                 //Create new socket
-                Socket newClient = serverInfo.Item1.EndAcceptSocket(ar);
+                Socket errorClient = serverInfo.Item1.EndAcceptSocket(ar);
                 //Create new SocketState
-                SocketState errorState = new SocketState(serverInfo.Item2, newClient);
+                SocketState errorState = new SocketState(serverInfo.Item2, errorClient);
                 //Set error flag to true
                 errorState.ErrorOccured = true;
                 // Add error message and display to console
@@ -185,6 +193,9 @@ namespace NetworkUtil
             Socket socket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             Tuple<Socket, Action<SocketState>> info = new Tuple<Socket, Action<SocketState>>(socket, toCall);
 
+            //Sanity Check
+            Console.WriteLine("IP address found");
+
             // This disables Nagle's algorithm (google if curious!)
             // Nagle's algorithm can cause problems for a latency-sensitive 
             // game like ours will be 
@@ -200,6 +211,9 @@ namespace NetworkUtil
             {
                 //Call ConnectedCallBack with the info that was saved
                 ConnectedCallback(result);
+
+                //Sanity Check
+                Console.WriteLine("connection made");
             }
             // Connection has timed out and we want to close the socket and produce an error
             else
@@ -239,8 +253,11 @@ namespace NetworkUtil
             {
                 //EndConnect to finalize connection
                 socket.EndConnect(ar);
+
+                //Sanity Check
+                Console.WriteLine("Connection finalized");
                 //Invoke the toCall Action
-                info.Item2(newState);
+                newState.OnNetworkAction(newState);
             }
             catch
             {
@@ -272,6 +289,8 @@ namespace NetworkUtil
         {
             try
             {
+                //Sanity Check
+                Console.WriteLine("Get Data Invoked");
                 // Use beginReceive to finalize the the receive and store the data
                 state.TheSocket.BeginReceive(state.buffer, 0, state.buffer.Length, SocketFlags.None, ReceiveCallback, state);
             }
@@ -279,6 +298,7 @@ namespace NetworkUtil
             {
                 // If anything goes wrong set socket state's errorOccured to true
                 // and display appropriate message
+                Console.WriteLine("Sanity check Get Data error was thrown");
                 state.ErrorOccured = true;
                 state.ErrorMessage = "Message cannot be received";
                 state.OnNetworkAction(state);
@@ -311,18 +331,35 @@ namespace NetworkUtil
             {
                 //Get the number of bytes of the information received
                 int numBytes = state.TheSocket.EndReceive(ar);
-                //Convert to UTF8
-                String text = Encoding.UTF8.GetString(state.buffer, 0, numBytes);
-                //Add text to the stringbuilder
-                state.data.Append(text);
-                //Call the saved delegate
-                state.OnNetworkAction(state);
-
+                Console.WriteLine(numBytes);
+                if(numBytes != 0)
+                {
+                    //Convert to UTF8
+                    String text = Encoding.UTF8.GetString(state.buffer, 0, numBytes);
+                    //Add text to the stringbuilder
+                    state.data.Append(text);
+                    //Sanity Check
+                    Console.WriteLine("ReceiveCallback numbytes> 0 \n");
+                    //Call the saved delegate
+                    state.OnNetworkAction(state);
+                }
+                else
+                {
+                    // If anything goes wrong set socket state's errorOccured to true
+                    // and display appropriate message
+                    //Sanity check
+                    Console.WriteLine("numBytes was equal to 0");
+                    state.ErrorOccured = true;
+                    state.ErrorMessage = "Message cannot be received";
+                    state.OnNetworkAction(state);
+                }
             }
             catch
             {
                 // If anything goes wrong set socket state's errorOccured to true
                 // and display appropriate message
+                //Sanity check
+                Console.WriteLine("Error in ReceiveCallback thrown");
                 state.ErrorOccured = true;
                 state.ErrorMessage = "Message cannot be received";
                 state.OnNetworkAction(state);
@@ -349,6 +386,8 @@ namespace NetworkUtil
                 byte[] messageBytes = Encoding.UTF8.GetBytes(data);
                 // Begin sending the message
                 socket.BeginSend(messageBytes,0, messageBytes.Length, SocketFlags.None, SendCallback, socket);
+                //Sanity Check
+                Console.WriteLine("message sent \n");
                 return true;
             }
             catch
@@ -441,6 +480,8 @@ namespace NetworkUtil
             try
             {
                 newSocket.EndSend(ar);
+                //Sanity Check
+                Console.WriteLine("socket closed \n");
                 newSocket.Close();
             } 
             catch
