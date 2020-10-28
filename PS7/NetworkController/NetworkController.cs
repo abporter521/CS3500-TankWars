@@ -45,9 +45,6 @@ namespace NetworkUtil
             }
             catch (Exception)
             {
-
-                //Sanity check to see if throw was caught
-                Console.WriteLine("StartServer caught some error.");
                 //Return new TcpListener
                 return new TcpListener(IPAddress.Any, port);
             }
@@ -193,39 +190,39 @@ namespace NetworkUtil
             Socket socket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             Tuple<Socket, Action<SocketState>> info = new Tuple<Socket, Action<SocketState>>(socket, toCall);
 
-            //Sanity Check
-            Console.WriteLine("IP address found");
-
             // This disables Nagle's algorithm (google if curious!)
             // Nagle's algorithm can cause problems for a latency-sensitive 
             // game like ours will be 
             socket.NoDelay = true;
-
-            // Connect using a timeout (3 seconds)
-            //Saves the result of the begin connect without invoking callback to verify timeout does not happen
-            IAsyncResult result = socket.BeginConnect(ipAddress, port, null, info);
-            // boolean flag to signal timeout, end connection if is not made after 3 seconds
-            bool success = result.AsyncWaitHandle.WaitOne(3000, true);
-            // Check if timeout condition has been met
-            if (success)
+            //Try catch for the timeout 
+            try
             {
-                //Call ConnectedCallBack with the info that was saved
-                ConnectedCallback(result);
-
-                //Sanity Check
-                Console.WriteLine("connection made");
+                // Connect using a timeout (3 seconds)
+                //Saves the result of the begin connect without invoking callback to verify timeout does not happen
+                IAsyncResult result = socket.BeginConnect(ipAddress, port, null, info);
+                // boolean flag to signal timeout, end connection if is not made after 3 seconds
+                bool success = result.AsyncWaitHandle.WaitOne(3000, true);
+                // Check if timeout condition has been met
+                if (success)
+                {
+                    //Call ConnectedCallBack with the info that was saved
+                    ConnectedCallback(result);
+                }
+                //Else we timed out and we should throw exception
+                else
+                {
+                    throw new Exception();
+                }
             }
-            // Connection has timed out and we want to close the socket and produce an error
-            else
+            // Connection has timed out and we want to close the socket and produce an error      
+            catch (Exception)
             {
-                socket.Close();
-                SocketState timeoutState = new SocketState(toCall, new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp));
+                //Create new state with error flag set and call delegate
+                SocketState timeoutState = new SocketState(toCall, socket);
                 timeoutState.ErrorOccured = true;
                 timeoutState.ErrorMessage = "Connection timed out";
                 timeoutState.OnNetworkAction(timeoutState);
             }
-            // TODO: Finish the remainder of the connection process as specified.
-
         }
 
         /// <summary>
@@ -247,23 +244,25 @@ namespace NetworkUtil
             Tuple<Socket, Action<SocketState>> info = (Tuple<Socket, Action<SocketState>>)ar.AsyncState;
             //Tuple item 1 is the socket created in ConnectToServer
             Socket socket = info.Item1;
-            //Create a new SocketState representing the connection
-            SocketState newState = new SocketState(info.Item2, socket);
+
             try
             {
-                //EndConnect to finalize connection
-                socket.EndConnect(ar);
+                //Create a new SocketState representing the connection
+                SocketState newState = new SocketState(info.Item2, socket);
 
-                //Sanity Check
-                Console.WriteLine("Connection finalized");
+                //EndConnect to finalize connection
+                newState.TheSocket.EndConnect(ar);
+
                 //Invoke the toCall Action
                 newState.OnNetworkAction(newState);
             }
             catch
             {
-                newState.ErrorOccured = true;
-                newState.ErrorMessage = "Connection timed out";
-                newState.OnNetworkAction(newState);
+                //Create a new SocketState representing the connection
+                SocketState wreckedState = new SocketState(info.Item2, socket);
+                wreckedState.ErrorOccured = true;
+                wreckedState.ErrorMessage = "Connection timed out";
+                wreckedState.OnNetworkAction(wreckedState);
             }
 
         }
@@ -289,16 +288,12 @@ namespace NetworkUtil
         {
             try
             {
-                //Sanity Check
-                Console.WriteLine("Get Data Invoked");
                 // Use beginReceive to finalize the the receive and store the data
                 state.TheSocket.BeginReceive(state.buffer, 0, state.buffer.Length, SocketFlags.None, ReceiveCallback, state);
             }
-            catch
+            catch (Exception)
             {
                 // If anything goes wrong set socket state's errorOccured to true
-                // and display appropriate message
-                Console.WriteLine("Sanity check Get Data error was thrown");
                 state.ErrorOccured = true;
                 state.ErrorMessage = "Message cannot be received";
                 state.OnNetworkAction(state);
@@ -331,15 +326,12 @@ namespace NetworkUtil
             {
                 //Get the number of bytes of the information received
                 int numBytes = state.TheSocket.EndReceive(ar);
-                Console.WriteLine(numBytes);
-                if(numBytes != 0)
+                if (numBytes != 0)
                 {
                     //Convert to UTF8
                     String text = Encoding.UTF8.GetString(state.buffer, 0, numBytes);
                     //Add text to the stringbuilder
-                    state.data.Append(text);
-                    //Sanity Check
-                    Console.WriteLine("ReceiveCallback numbytes> 0 \n");
+                    state.data.Append(text); ;
                     //Call the saved delegate
                     state.OnNetworkAction(state);
                 }
@@ -347,9 +339,8 @@ namespace NetworkUtil
                 {
                     // If anything goes wrong set socket state's errorOccured to true
                     // and display appropriate message
-                    //Sanity check
-                    Console.WriteLine("numBytes was equal to 0");
                     state.ErrorOccured = true;
+                    state.data.Append("no message");
                     state.ErrorMessage = "Message cannot be received";
                     state.OnNetworkAction(state);
                 }
@@ -358,8 +349,6 @@ namespace NetworkUtil
             {
                 // If anything goes wrong set socket state's errorOccured to true
                 // and display appropriate message
-                //Sanity check
-                Console.WriteLine("Error in ReceiveCallback thrown");
                 state.ErrorOccured = true;
                 state.ErrorMessage = "Message cannot be received";
                 state.OnNetworkAction(state);
@@ -378,6 +367,7 @@ namespace NetworkUtil
         /// <returns>True if the send process was started, false if an error occurs or the socket is already closed</returns>
         public static bool Send(Socket socket, string data)
         {
+            //Check if the socket is connected
             if (!socket.Connected)
                 return false;
             try
@@ -385,14 +375,12 @@ namespace NetworkUtil
                 //convert data to UTF8
                 byte[] messageBytes = Encoding.UTF8.GetBytes(data);
                 // Begin sending the message
-                socket.BeginSend(messageBytes,0, messageBytes.Length, SocketFlags.None, SendCallback, socket);
+                socket.BeginSend(messageBytes, 0, messageBytes.Length, SocketFlags.None, SendCallback, socket);
                 //Sanity Check
-                Console.WriteLine("message sent \n");
                 return true;
             }
-            catch
+            catch (Exception)
             {
-                Console.WriteLine("Send threw");
                 //Closes socket before returning false
                 socket.Close();
                 return false;
@@ -416,7 +404,7 @@ namespace NetworkUtil
             try
             {
                 socket.EndSend(ar);
-            } 
+            }
             catch
             {
                 Console.WriteLine("Send callback threw");
@@ -439,7 +427,7 @@ namespace NetworkUtil
         {
             // Check if the socket is connected and do not attempt to send
             // if it is not
-            if(!socket.Connected)
+            if (!socket.Connected)
             {
                 return false;
             }
@@ -450,15 +438,14 @@ namespace NetworkUtil
                 // Begin sending the message
                 socket.BeginSend(messageBytes, 0, messageBytes.Length, SocketFlags.None, SendCallback, socket);
                 return true;
-            } 
+            }
             catch
             {
-                Console.WriteLine("Send and close threw");
                 // Closes the socket before returning false
                 socket.Close();
                 return false;
             }
-           
+
         }
 
         /// <summary>
@@ -480,13 +467,10 @@ namespace NetworkUtil
             try
             {
                 newSocket.EndSend(ar);
-                //Sanity Check
-                Console.WriteLine("socket closed \n");
                 newSocket.Close();
-            } 
+            }
             catch
             {
-                Console.WriteLine("send and close callback threw");
                 newSocket.Close();
             }
         }
