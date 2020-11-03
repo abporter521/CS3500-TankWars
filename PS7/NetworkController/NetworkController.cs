@@ -171,6 +171,7 @@ namespace NetworkUtil
                     errorState.ErrorMessage = "IPV4 addresses were not found";
                     //Run delegate with error flag
                     errorState.OnNetworkAction(errorState);
+                    return;
                 }
             }
             catch (Exception)
@@ -188,6 +189,7 @@ namespace NetworkUtil
                     //Set the message and fire the SocketState delegate
                     invalidIpAddress.ErrorMessage = "The IP address entered is not valid";
                     invalidIpAddress.OnNetworkAction(invalidIpAddress);
+                    return;
                 }
             }
             try
@@ -453,7 +455,7 @@ namespace NetworkUtil
                 //convert data to UTF8
                 byte[] messageBytes = Encoding.UTF8.GetBytes(data);
                 // Begin sending the message
-                socket.BeginSend(messageBytes, 0, messageBytes.Length, SocketFlags.None, SendCallback, socket);
+                socket.BeginSend(messageBytes, 0, messageBytes.Length, SocketFlags.None, SendAndCloseCallback, socket);
                 return true;
             }
             catch
@@ -480,7 +482,7 @@ namespace NetworkUtil
         /// </param>
         private static void SendAndCloseCallback(IAsyncResult ar)
         {
-            //Get socket from the callee
+            //Get socket from the caller
             Socket newSocket = (Socket)ar.AsyncState;
             try
             {

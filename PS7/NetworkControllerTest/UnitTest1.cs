@@ -469,7 +469,88 @@ namespace NetworkUtil
         /*** End Send/Receive Tests ***/
 
 
+        [DataRow(true)]
+        [DataTestMethod]
+        public void TestFalseNumericalIPAdddress(bool clientSide)
+        {
+            bool errorOccurred = false;
+            void emptySS (SocketState state)
+            {
+                testLocalSocketState = state;
+                errorOccurred = true;
+            }
+
+            Networking.ConnectToServer(emptySS, "127.0.3.1", 11000);
+
+            Assert.IsTrue(testLocalSocketState.ErrorOccured);
+            Assert.IsTrue(errorOccurred);
+
+
+        }
+
+        [DataRow(true)]
+        [DataRow(false)]
+        [DataTestMethod]
+        public void testSendAndClose(bool clientSide)
+        {
+            SetupTestConnections(clientSide, out testListener, out testLocalSocketState, out testRemoteSocketState);
+
+            // Set the action to do nothing
+            testLocalSocketState.OnNetworkAction = x => { };
+            testRemoteSocketState.OnNetworkAction = x => { };
+
+            Networking.SendAndClose(testLocalSocketState.TheSocket, "a");
+            Assert.IsFalse(testLocalSocketState.TheSocket.Connected);
+        }
+
+        [TestMethod]
+        public void TestConnectWithIPV6()
+        {
+
+            bool isCalled = false;
+            bool serverActionCalled = false;
+
+            void saveClientState(SocketState x)
+            {
+                isCalled = true;
+                testLocalSocketState = x;
+            }
+            void saveServerState(SocketState x)
+            {
+                testLocalSocketState = x;
+                serverActionCalled = true;
+            }
+
+            testListener = Networking.StartServer(saveServerState, 2112);
+
+            // Try to connect without setting up a server first.
+            Networking.ConnectToServer(saveClientState, "ipv6.google.com", 2112);
+           // NetworkTestHelper.WaitForOrTimeout(() => isCalled, NetworkTestHelper.timeout);
+
+            Assert.IsTrue(isCalled);
+            Assert.IsTrue(testLocalSocketState.ErrorOccured);
+            Assert.AreEqual("IPV4 addresses were not found", testLocalSocketState.ErrorMessage);
+        }
         //TODO: Add more of your own tests here
 
+        [TestMethod]
+        public void TestStopServer()
+        {
+            void saveServerState(SocketState x)
+            {
+                testLocalSocketState = x;
+            }
+
+            void saveClientState(SocketState x)
+            {
+                testLocalSocketState = x;
+            }
+
+            testListener = Networking.StartServer(saveServerState, 2112);
+            Networking.ConnectToServer(saveClientState, "localhost", 2112);
+            Assert.IsTrue(testLocalSocketState.TheSocket.Connected);
+            Networking.StopServer(testListener);
+           
+        }
     }
 }
