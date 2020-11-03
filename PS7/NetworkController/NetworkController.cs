@@ -90,8 +90,10 @@ namespace NetworkUtil
             }
             catch (Exception)
             {
+                //Create an IPAddress to create a new socket
+                IPAddress ipad = IPAddress.None;
                 //Create new socket
-                Socket errorClient = serverInfo.Item1.EndAcceptSocket(ar);
+                Socket errorClient = new Socket(ipad.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 //Create new SocketState
                 SocketState errorState = new SocketState(serverInfo.Item2, errorClient);
                 //Set error flag to true
@@ -110,10 +112,12 @@ namespace NetworkUtil
         {
             try
             {
+                //stops the listener
                 listener.Stop();
             }
             catch (Exception e)
             {
+                //Any possible error will be displayed to the console
                 string s = e.Message;
                 Console.WriteLine(s);
             }
@@ -141,9 +145,6 @@ namespace NetworkUtil
         /// <param name="port">The port on which the server is listening</param>
         public static void ConnectToServer(Action<SocketState> toCall, string hostName, int port)
         {
-            // TODO: This method is incomplete, but contains a starting point 
-            //       for decoding a host address
-
             // Establish the remote endpoint for the socket.
             IPHostEntry ipHostInfo;
             IPAddress ipAddress = IPAddress.None;
@@ -163,10 +164,12 @@ namespace NetworkUtil
                 // Didn't find any IPV4 addresses
                 if (!foundIPV4)
                 {
-                    // TODO: Indicate an error to the user, as specified in the documentation
+                    //Indicate an error to the user, as specified in the documentation
                     SocketState errorState = new SocketState(toCall, new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp));
+                    //Set error state and message
                     errorState.ErrorOccured = true;
                     errorState.ErrorMessage = "IPV4 addresses were not found";
+                    //Run delegate with error flag
                     errorState.OnNetworkAction(errorState);
                 }
             }
@@ -179,24 +182,28 @@ namespace NetworkUtil
                 }
                 catch (Exception)
                 {
+                    //IP address was not found, so we create a new SocketState and set error flag to true
                     SocketState invalidIpAddress = new SocketState(toCall, new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp));
                     invalidIpAddress.ErrorOccured = true;
+                    //Set the message and fire the SocketState delegate
                     invalidIpAddress.ErrorMessage = "The IP address entered is not valid";
                     invalidIpAddress.OnNetworkAction(invalidIpAddress);
                 }
             }
-
-            // Create a TCP/IP socket.
-            Socket socket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            Tuple<Socket, Action<SocketState>> info = new Tuple<Socket, Action<SocketState>>(socket, toCall);
-
-            // This disables Nagle's algorithm (google if curious!)
-            // Nagle's algorithm can cause problems for a latency-sensitive 
-            // game like ours will be 
-            socket.NoDelay = true;
-            //Try catch for the timeout 
             try
             {
+                // Create a TCP/IP socket.
+                Socket socket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                //Create Tuple to hold information that needs to be passed to the callback
+                Tuple<Socket, Action<SocketState>> info = new Tuple<Socket, Action<SocketState>>(socket, toCall);
+
+                // This disables Nagle's algorithm (google if curious!)
+                // Nagle's algorithm can cause problems for a latency-sensitive 
+                // game like ours will be 
+                socket.NoDelay = true;
+                //Try catch for the timeout 
+
+
                 // Connect using a timeout (3 seconds)
                 //Saves the result of the begin connect without invoking callback to verify timeout does not happen
                 IAsyncResult result = socket.BeginConnect(ipAddress, port, null, info);
@@ -217,6 +224,8 @@ namespace NetworkUtil
             // Connection has timed out and we want to close the socket and produce an error      
             catch (Exception)
             {
+                Socket socket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+
                 //Create new state with error flag set and call delegate
                 SocketState timeoutState = new SocketState(toCall, socket);
                 timeoutState.ErrorOccured = true;
@@ -239,16 +248,15 @@ namespace NetworkUtil
         /// </summary>
         /// <param name="ar">The object asynchronously passed via BeginConnect</param>
         private static void ConnectedCallback(IAsyncResult ar)
-        {
+        {          
             //Decodes the argument into the tuple we passed in
-            Tuple<Socket, Action<SocketState>> info = (Tuple<Socket, Action<SocketState>>)ar.AsyncState;
+            Tuple<Socket, Action<SocketState>> socketStateItems = (Tuple<Socket, Action<SocketState>>)ar.AsyncState;
             //Tuple item 1 is the socket created in ConnectToServer
-            Socket socket = info.Item1;
-
+            Socket socket = socketStateItems.Item1;
             try
             {
                 //Create a new SocketState representing the connection
-                SocketState newState = new SocketState(info.Item2, socket);
+                SocketState newState = new SocketState(socketStateItems.Item2, socket);
 
                 //EndConnect to finalize connection
                 newState.TheSocket.EndConnect(ar);
@@ -259,8 +267,9 @@ namespace NetworkUtil
             catch
             {
                 //Create a new SocketState representing the connection
-                SocketState wreckedState = new SocketState(info.Item2, socket);
+                SocketState wreckedState = new SocketState(socketStateItems.Item2, socket);
                 wreckedState.ErrorOccured = true;
+                //With error flagged, run the SocketState delgate
                 wreckedState.ErrorMessage = "Connection timed out";
                 wreckedState.OnNetworkAction(wreckedState);
             }
@@ -296,6 +305,7 @@ namespace NetworkUtil
                 // If anything goes wrong set socket state's errorOccured to true
                 state.ErrorOccured = true;
                 state.ErrorMessage = "Message cannot be received";
+                //Call delegate
                 state.OnNetworkAction(state);
             }
         }
@@ -326,6 +336,7 @@ namespace NetworkUtil
             {
                 //Get the number of bytes of the information received
                 int numBytes = state.TheSocket.EndReceive(ar);
+                //Check that message is not empty
                 if (numBytes != 0)
                 {
                     //Convert to UTF8
@@ -338,10 +349,10 @@ namespace NetworkUtil
                 else
                 {
                     // If anything goes wrong set socket state's errorOccured to true
-                    // and display appropriate message
+                    // with appropriate message
                     state.ErrorOccured = true;
-                    state.data.Append("no message");
                     state.ErrorMessage = "Message cannot be received";
+                    //Run the delgate
                     state.OnNetworkAction(state);
                 }
             }
@@ -367,16 +378,16 @@ namespace NetworkUtil
         /// <returns>True if the send process was started, false if an error occurs or the socket is already closed</returns>
         public static bool Send(Socket socket, string data)
         {
-            //Check if the socket is connected
-            if (!socket.Connected)
-                return false;
             try
             {
+                //Check if the socket is connected
+                if (!socket.Connected)
+                    return false;
                 //convert data to UTF8
                 byte[] messageBytes = Encoding.UTF8.GetBytes(data);
                 // Begin sending the message
                 socket.BeginSend(messageBytes, 0, messageBytes.Length, SocketFlags.None, SendCallback, socket);
-                //Sanity Check
+                //No errors occured so we can return true
                 return true;
             }
             catch (Exception)
@@ -400,11 +411,14 @@ namespace NetworkUtil
         /// </param>
         private static void SendCallback(IAsyncResult ar)
         {
+            //Get socket from callee
             Socket socket = (Socket)ar.AsyncState;
             try
             {
+                //Finalize send 
                 socket.EndSend(ar);
             }
+            //Sanity check to make sure this method does not throw
             catch
             {
                 Console.WriteLine("Send callback threw");
@@ -425,14 +439,14 @@ namespace NetworkUtil
         /// <returns>True if the send process was started, false if an error occurs or the socket is already closed</returns>
         public static bool SendAndClose(Socket socket, string data)
         {
-            // Check if the socket is connected and do not attempt to send
-            // if it is not
-            if (!socket.Connected)
-            {
-                return false;
-            }
             try
             {
+                // Check if the socket is connected and do not attempt to send
+                // if it is not
+                if (!socket.Connected)
+                {
+                    return false;
+                }
                 //convert data to UTF8
                 byte[] messageBytes = Encoding.UTF8.GetBytes(data);
                 // Begin sending the message
@@ -463,14 +477,18 @@ namespace NetworkUtil
         /// </param>
         private static void SendAndCloseCallback(IAsyncResult ar)
         {
+            //Get socket from the callee
             Socket newSocket = (Socket)ar.AsyncState;
             try
             {
+                //Finalize the send and close the socket
                 newSocket.EndSend(ar);
                 newSocket.Close();
             }
+            //Sanity check to make sure it does not throw
             catch
             {
+                //Close the socket if anything happens
                 newSocket.Close();
             }
         }
