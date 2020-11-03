@@ -248,7 +248,7 @@ namespace NetworkUtil
         /// </summary>
         /// <param name="ar">The object asynchronously passed via BeginConnect</param>
         private static void ConnectedCallback(IAsyncResult ar)
-        {          
+        {
             //Decodes the argument into the tuple we passed in
             Tuple<Socket, Action<SocketState>> socketStateItems = (Tuple<Socket, Action<SocketState>>)ar.AsyncState;
             //Tuple item 1 is the socket created in ConnectToServer
@@ -341,8 +341,11 @@ namespace NetworkUtil
                 {
                     //Convert to UTF8
                     String text = Encoding.UTF8.GetString(state.buffer, 0, numBytes);
-                    //Add text to the stringbuilder
-                    state.data.Append(text); ;
+                    //Add text to the stringbuilder in a thread safe manner
+                    lock (state.data)
+                    {
+                        state.data.Append(text);
+                    };
                     //Call the saved delegate
                     state.OnNetworkAction(state);
                 }
