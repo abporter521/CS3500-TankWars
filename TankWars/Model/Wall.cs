@@ -12,7 +12,7 @@ namespace TankWars
     /// @Author- Adam Scott & Andrew Porter
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    class Wall
+    public class Wall
     {   
         //A unique identifying number to this wall segment
         [JsonProperty(PropertyName = "wall")]

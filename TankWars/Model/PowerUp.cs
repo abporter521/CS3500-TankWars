@@ -15,7 +15,7 @@ namespace TankWars
     /// @Date: 11-7-2020
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    class PowerUp
+    public class PowerUp
     {
         // Unique int ID number based on Power Up objects
         [JsonProperty(PropertyName = "power")]

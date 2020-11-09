@@ -16,7 +16,7 @@ namespace TankWars
 
     [JsonObject(MemberSerialization.OptIn)]
 
-    class Beam
+    public class Beam
     {
         // Unique int ID number based on Beam objects
         [JsonProperty(PropertyName = "beam")]

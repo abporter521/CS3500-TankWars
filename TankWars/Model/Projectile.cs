@@ -14,7 +14,7 @@ namespace TankWars
     /// @Date 6 November 2020
     /// </summary>
     [JsonObject(MemberSerialization.OptIn)]
-    class Projectile
+    public class Projectile
     {
         //Contains the identifying number of the projectile
         [JsonProperty(PropertyName = "proj")]

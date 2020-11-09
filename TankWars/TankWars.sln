@@ -7,7 +7,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Model", "Model\Model.csproj
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RESOURCES", "RESOURCES\RESOURCES.csproj", "{C3642E61-DF29-42BA-91AD-FB1034C42B23}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameController", "GameController\GameController.csproj", "{158825D9-4406-4792-A5EE-B1B9469B48D6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameController", "GameController\GameController.csproj", "{158825D9-4406-4792-A5EE-B1B9469B48D6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientView", "ClientView\ClientView.csproj", "{7306D017-42DB-4F00-A447-547FCA139063}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DrawingPanel", "DrawingPanel\DrawingPanel.csproj", "{1DCB9D09-7FA3-4F27-9E05-D6BAF69AD329}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,6 +30,14 @@ Global
 		{158825D9-4406-4792-A5EE-B1B9469B48D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{158825D9-4406-4792-A5EE-B1B9469B48D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{158825D9-4406-4792-A5EE-B1B9469B48D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7306D017-42DB-4F00-A447-547FCA139063}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7306D017-42DB-4F00-A447-547FCA139063}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7306D017-42DB-4F00-A447-547FCA139063}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7306D017-42DB-4F00-A447-547FCA139063}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1DCB9D09-7FA3-4F27-9E05-D6BAF69AD329}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1DCB9D09-7FA3-4F27-9E05-D6BAF69AD329}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1DCB9D09-7FA3-4F27-9E05-D6BAF69AD329}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1DCB9D09-7FA3-4F27-9E05-D6BAF69AD329}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
