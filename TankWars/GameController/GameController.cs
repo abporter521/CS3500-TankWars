@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Threading;
 using NetworkUtil;
@@ -8,11 +9,14 @@ using Newtonsoft.Json.Linq;
 
 namespace TankWars
 {
+    //TODO:  KEY HANDLERS
+    //       SET UP EVENTS FOR COMMUNICATION WITH VIEW
+    //       ADD LOCKS TO WORLD UPDATE METHOD
     public class GameController
     {
 
-        public delegate void EventHandler(IEnumerable<string> JsonMessage);
-        public event EventHandler updateWorld;
+        public delegate void EventHandler();
+        public event EventHandler UpdateWorld;
 
         public delegate void ConnectedHandler();
         public event ConnectedHandler Connected;
@@ -22,6 +26,14 @@ namespace TankWars
 
         // State representing the connection with the server
         private SocketState server = null;
+
+        //bools to register key strokes
+        bool leftKeyPressed = false;
+        bool rightKeyPressed = false;
+        bool upKeyPressed = false;
+        bool downKeyPressed = false;
+        bool leftClickPressed = false;
+        bool rightClickPressed = false;
 
         //Contains information of the game world
         private World theWorld;
@@ -40,7 +52,7 @@ namespace TankWars
         /// 
         /// </summary>
         /// <param name="ss"></param> Socket state to represent the server connection
-        public void OnConnect(SocketState ss)
+        private void OnConnect(SocketState ss)
         {
             //Check if the socket state shows that an error occurred
             if (ss.ErrorOccured)
@@ -62,6 +74,10 @@ namespace TankWars
 
         }
 
+        /// <summary>
+        /// This method begins the callback for receiving messages
+        /// </summary>
+        /// <param name="socket"></param>
         private void ReceiveMessage(SocketState socket)
         {
             if (socket.ErrorOccured)
@@ -71,6 +87,15 @@ namespace TankWars
             }
             ProcessMessage(socket);
             Networking.GetData(socket);
+        }
+
+        /// <summary>
+        /// Returns the world object for the view
+        /// </summary>
+        /// <returns></returns>
+        public World GetWorld()
+        {
+            return theWorld;
         }
 
         /// <summary>
@@ -134,7 +159,59 @@ namespace TankWars
                     continue;
                 }
             }
+
+            //Process the inputs received during update
+            ProcessInput();
+
+            //Notify the View to redraw the world
+            UpdateWorld();
         }
+
+        private void ProcessInput()
+        {
+            if (leftClickPressed)
+            {
+                //Do something
+            }
+            if (rightClickPressed)
+            {
+                //Do something
+            }
+            if (upKeyPressed)
+            {
+                //Do something
+            }
+            if (rightKeyPressed)
+            {
+                //Do something
+            }
+            if (leftKeyPressed)
+            {
+                //Do something
+            }
+            if (downKeyPressed)
+            {
+                //Do something
+            }
+
+        }
+
+
+        public void HandleMouseRequest(string whichSide, Tank myTank)
+        {
+            if(whichSide == "left")
+            {
+                //Do something
+            }
+
+            if(whichSide == "right")
+            {
+
+            }
+
+        }
+
+        //TO DO ADD LOCKS
         /// <summary>
         /// The method takes the current JsonMessage from ProcessMessage and
         /// updates the models within the world.

@@ -83,6 +83,13 @@ namespace TankWars
             set { location = value; }
         }
 
+        //Get Set property related to location of projectile
+        public Vector2D AimDirection
+        {
+            get { return aiming; }
+            set { aiming = value; }
+        }
+
         //Get Set for the score of the player
         public int Score
         {
@@ -102,6 +109,12 @@ namespace TankWars
         {
             get => died;
             set => died = value;
+        }
+        //Get Set for death state of the player
+        public Vector2D Orientation
+        {
+            get => orientation;
+            set => orientation = value;
         }
 
         //Get Set for connectivity of the player
