@@ -275,6 +275,8 @@ namespace TankWars
             else
                 fire = "none";
 
+            // Normalize the aim direction vector
+            t.AimDirection.Normalize();
             //Create the control command object
             ControlCommand cc = new ControlCommand(direction, fire, t.AimDirection);
 

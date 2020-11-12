@@ -4,8 +4,15 @@ using System.Text;
 
 namespace TankWars
 {
+    /// <summary>
+    /// This is a class that contains the world and all the
+    /// objects inside
+    /// 
+    /// @Author Andrew Porter & Adam Scott
+    /// </summary>
     public class World
     {
+        //Collections of all types of objects in the world
         private Dictionary<int, Tank> tanks;
         private Dictionary<int, Wall> walls;
         private Dictionary<int, Projectile> projectiles;
@@ -13,6 +20,7 @@ namespace TankWars
         private Dictionary<int, PowerUp> powerUps;
         private int size;
 
+        //Constructor
         public World(int worldSize)
         {
             tanks = new Dictionary<int, Tank>();
@@ -22,6 +30,8 @@ namespace TankWars
             powerUps = new Dictionary<int, PowerUp>();
             size = worldSize;
         }
+
+        //Getter Setter methods for all the different contents of the world
 
         public Dictionary<int, Tank> Tanks
         {

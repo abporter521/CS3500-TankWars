@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
@@ -29,18 +30,18 @@ namespace TankWars
             InitializeComponent();
             theController = ctl;
             theWorld = theController.GetWorld();
-            theController.UpdateArrived += OnFrame;
+            theController.UpdateWorld += OnFrame;
 
             // Set up the form.
 
             // Set the window size
             ClientSize = new Size(viewSize, viewSize + menuSize);
 
-                        // Set up key and mouse handlers
+            // Set up key and mouse handlers
             this.KeyDown += HandleKeyDown;
             this.KeyUp += HandleKeyUp;
-            drawingPanel.MouseDown += HandleMouseDown;
-            drawingPanel.MouseUp += HandleMouseUp;
+            DrawingPanel.MouseDown += HandleMouseDown;
+            DrawingPanel.MouseUp += HandleMouseUp;
         }
 
 
@@ -61,8 +62,8 @@ namespace TankWars
         /// <param name="e"></param>
         private void HandleKeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.Escape)
-                Application.Exit();
+            if (e.KeyCode == Keys.S)
+                theController.Movement("down");
             if (e.KeyCode == Keys.W)
                 theController.HandleMoveRequest();
 

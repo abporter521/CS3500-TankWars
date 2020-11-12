@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Text;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -51,16 +52,156 @@ namespace TankWars
         {
             Tank t = o as Tank;
 
-            int width = 60;
-            int height = 60;
+            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+            //TODO: find the relative file location of sprit image based on tank ID
+            //Switch case here
+            int tankID = (t.GetID() % 8);
+
+            // Get the tanks ID number and assign them a tank color based on that
+            switch (tankID)
+            {
+
+                case 0:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\BlueTank.png"), -30, -30);
+                    DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
+                    break;
+                case 1:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\DarkTank.png"), -30, -30);
+                    DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
+                    break;
+                case 2:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\GreenTank.png"), -30, -30);
+                    DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
+                    break;
+                case 3:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\LightGreenTank.png"), -30, -30);
+                    DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
+                    break;
+                case 4:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\OrangeTank.png"), -30, -30);
+                    DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
+                    break;
+                case 5:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\PurpleTank.png"), -30, -30);
+                    DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
+                    break;
+                case 6:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\RedTank.png"), -30, -30);
+                    DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
+                    break;
+                case 7:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\YellowTank.png"), -30, -30);
+                    DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
+                    break;
+
+            }
+        }
+
+        private void turretDrawer(object o, PaintEventArgs e)
+        {
+            Tank t = o as Tank;
 
             e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
             //TODO: find the relative file location of sprit image based on tank ID
             //Switch case here
-            e.Graphics.DrawImage(@"")
+            int tankID = (t.GetID() % 8);
+
+            // Get the tanks ID number and assign them a tank color based on that
+            switch (tankID)
+            {
+
+                case 0:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\BlueTurret.png"), -25, -25);
+                    break;
+                case 1:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\DarkTurret.png"), -25, -25);
+                    break;
+                case 2:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\GreenTurret.png"), -25, -25);
+                    break;
+                case 3:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\LightGreenTankTurret.png"), -25, -25);
+                    break;
+                case 4:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\OrangeTurret.png"), -25, -25);
+                    break;
+                case 5:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\PurpleTurret.png"), -25, -25);
+                    break;
+                case 6:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\RedTurret.png"), -25, -25);
+                    break;
+                case 7:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\YellowTurret.png"), -25, -25);
+                    break;
+            }
         }
 
+        private void wallDrawer(object o, PaintEventArgs e)
+        {
+            Wall w = o as Wall;
+
+            e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\WallSprite.png"), -25, -25);
+        }
+
+        private void powerUpDrawer(object o, PaintEventArgs e)
+        {
+            PowerUp p = o as PowerUp;
+
+            e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\WallSprite.png"), -8, -8);
+        }
+
+        private void projectileDrawer(object o, PaintEventArgs e)
+        {
+            Projectile p = o as Projectile;
+
+            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+            //TODO: find the relative file location of sprit image based on projectile ID
+            //Switch case here
+            int projID = (p.getOwner() % 8);
+            // Get the projectile's ID number and assign them a tank color based on that
+            switch (projID)
+            {
+
+                case 0:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\shot_blue.png"), -15, -15);
+                    break;
+                case 1:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\shot_grey.png"), -15, -15);
+                    break;
+                case 2:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\shot-green.png"), -15, -15);
+                    break;
+                case 3:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\shot-green.png"), -15, -15);
+                    break;
+                case 4:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\shot-brown.png"), -15, -15);
+                    break;
+                case 5:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\shot_violet.png"), -15, -15);
+                    break;
+                case 6:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\shot-red.png"), -15, -15);
+                    break;
+                case 7:
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\shot-yellow.png"), -15, -15);
+                    break;
+            }
+        }
+
+        private void beamDrawer(object o, PaintEventArgs e)
+        {
+            Beam b = o as Beam;
+
+            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
+            e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\shot-white"), -15, -15);
+
+        }
         // This method is invoked when the DrawingPanel needs to be re-drawn
         protected void OnPaint(PaintEventArgs e)
         {
