@@ -86,6 +86,8 @@ namespace TankWars
                 return;
             }
             ProcessMessage(socket);
+
+            //Start Event loop
             Networking.GetData(socket);
         }
 
@@ -111,7 +113,7 @@ namespace TankWars
             string[] parsedMessage = JsonMessage.Split('\n');
             JObject curObj;
             JToken curToken;
-            
+
             // Loop through each Json segment and identify its type to update model.
             // Once object type has been found pass in the Json message along with an int 
             // value that references it's type within the UpdateWorldModel method.
@@ -161,55 +163,130 @@ namespace TankWars
             }
 
             //Process the inputs received during update
-            ProcessInput();
+            SendTankUpdate(t);
 
             //Notify the View to redraw the world
             UpdateWorld();
         }
 
-        private void ProcessInput()
+        /// <summary>
+        /// Method for registering an attack by a tank
+        /// </summary>
+        /// <param name="whichSide"></param>
+        public void WeaponFire(string whichSide, Tank t)
         {
-            if (leftClickPressed)
+            //Determines which weapon fired
+            if (whichSide == "left")
+                leftClickPressed = true;
+            if (whichSide == "right")
+                rightClickPressed = true;
+
+            //Update server
+            SendTankUpdate(t);
+        }
+
+        /// <summary>
+        /// This method is called when a keyevent is registered
+        /// Sets the boolean to true allowing the movement method
+        /// to be called
+        /// </summary>
+        /// <param name="keyPressed"></param>
+        public void Movement(string keyPressed, Tank t)
+        {
+            //Sets the boolean when appropriate key is pressed
+            switch (keyPressed)
             {
-                //Do something
+                //Set left to true and others to false
+                case "left":
+                    leftKeyPressed = true;
+                    rightKeyPressed = false;
+                    upKeyPressed = false;
+                    downKeyPressed = false;
+                    break;
+                //Set Right to true and others to false
+                case "right":
+                    rightKeyPressed = true;
+                    leftKeyPressed = false;
+                    upKeyPressed = false;
+                    downKeyPressed = false;
+                    break;
+
+                //Set Up to true and others to false
+                case "up":
+                    upKeyPressed = true;
+                    downKeyPressed = false;
+                    leftKeyPressed = false;
+                    rightKeyPressed = false;
+                    break;
+                //Set Down to true and other to false
+                case "down":
+                    downKeyPressed = true;
+                    upKeyPressed = false;
+                    leftKeyPressed = false;
+                    rightKeyPressed = false;
+                    break;
+
             }
-            if (rightClickPressed)
-            {
-                //Do something
-            }
+
+            //Send tank update
+            SendTankUpdate(t);
+        }
+
+        /// <summary>
+        /// Method when the tank registers no key pressed
+        /// </summary>
+        public void MovementStopped(Tank t)
+        {
+            downKeyPressed = false;
+            upKeyPressed = false;
+            leftKeyPressed = false;
+            rightKeyPressed = false;
+
+            //Send tank update
+            SendTankUpdate(t);
+        }
+
+        /// <summary>
+        /// Method that sends the tanks updated stats to the server
+        /// </summary>
+        private void SendTankUpdate(Tank t)
+        {
+            //Set up parameters for Control command object
+            string direction;
+            string fire;
+
+            //Check movement state
             if (upKeyPressed)
-            {
-                //Do something
-            }
-            if (rightKeyPressed)
-            {
-                //Do something
-            }
-            if (leftKeyPressed)
-            {
-                //Do something
-            }
-            if (downKeyPressed)
-            {
-                //Do something
-            }
+                direction = "up";
+            else if (downKeyPressed)
+                direction = "down";
+            else if (leftKeyPressed)
+                direction = "left";
+            else if (rightKeyPressed)
+                direction = "right";
+            else
+                direction = "none";
+
+            //Check firing state
+            if (leftClickPressed)
+                fire = "main";
+            else if (rightClickPressed)
+                fire = "alt";
+            else
+                fire = "none";
+
+            //Create the control command object
+            ControlCommand cc = new ControlCommand(direction, fire, t.AimDirection);
+
+            //Send to server
+            Networking.Send(server.TheSocket, JsonConvert.SerializeObject(cc));
+
+            //Reset weapon states
+            leftClickPressed = false;
+            rightClickPressed = false;
 
         }
 
-
-        public void HandleMouseRequest(string whichSide, Tank myTank)
-        {
-            if(whichSide == "left")
-            {
-                //Do something
-            }
-
-            if(whichSide == "right")
-            {
-
-            }
-
-        }
 
         //TO DO ADD LOCKS
         /// <summary>
