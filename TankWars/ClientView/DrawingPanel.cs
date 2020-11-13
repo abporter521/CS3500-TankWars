@@ -13,7 +13,7 @@ namespace TankWars
     //TODO: CREATE COMMENTS
     //      CREATE OTHER METHODS FOR DRAWING OBJECTS
     //      ADD LOCKS ON DRAW
-    class DrawingPanel
+    public class DrawingPanel : Panel
     {
         //Variable containing the current world of the game
         private World World;
@@ -296,7 +296,7 @@ namespace TankWars
 
                 alreadyDrawn = true;
             }
-
+            base.OnPaint(e);
         }
     }
 }

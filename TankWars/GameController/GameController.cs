@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
 using System.Net.WebSockets;
 using System.Threading;
 using NetworkUtil;
@@ -104,7 +105,7 @@ namespace TankWars
 
             //Change network action to receive normal flow of data method
             ss.OnNetworkAction = ReceiveMessage;
-            
+
             //Extract the ID data and world data for setup
             string startUp = ss.GetData();
             string[] elements = startUp.Split('\n');
@@ -115,7 +116,7 @@ namespace TankWars
             theWorld = new World(worldSize);
 
             //Update world model with walls
-            foreach(string wall in elements)
+            foreach (string wall in elements)
             {
                 if (!wall.Contains("wall"))
                     continue;
@@ -214,9 +215,18 @@ namespace TankWars
                 leftClickPressed = true;
             if (whichSide == "right")
                 rightClickPressed = true;
-
             //Update server
             SendTankUpdate(selfTank);
+        }
+
+        public void TurretMouseAngle(Point mousePos)
+        {
+            double x = mousePos.X - selfTank.Location.GetX();
+            double y = mousePos.Y - selfTank.Location.GetY();
+            Vector2D newAim = new Vector2D(x, y);
+            selfTank.AimDirection = newAim;
+            UpdateWorld();
+
         }
 
         /// <summary>
@@ -321,10 +331,10 @@ namespace TankWars
             leftClickPressed = false;
             rightClickPressed = false;
 
+            //Redraw the world
+            UpdateWorld();
         }
 
-
-        //TO DO ADD LOCKS
         /// <summary>
         /// The method takes the current JsonMessage from ProcessMessage and
         /// updates the models within the world.
@@ -343,58 +353,73 @@ namespace TankWars
                     //The tank object is us
                     if (curTank.GetID() == playerID)
                         selfTank = curTank;
-
-                    // Check if the world contains the object already
-                    if (theWorld.Tanks.ContainsKey(curTank.GetID()))
+                    lock (theWorld.Tanks)
                     {
-                        // Remove the tank so that it can be updated
-                        theWorld.Tanks.Remove(curTank.GetID());
+
+                        // Check if the world contains the object already
+                        if (theWorld.Tanks.ContainsKey(curTank.GetID()))
+                        {
+                            // Remove the tank so that it can be updated
+                            theWorld.Tanks.Remove(curTank.GetID());
+                        }
+                        // Re-add the tank back into the world
+                        theWorld.Tanks.Add(curTank.GetID(), curTank);
                     }
-                    // Re-add the tank back into the world
-                    theWorld.Tanks.Add(curTank.GetID(), curTank);
                     break;
                 case 1:
                     // Convert Json message into Wall object
                     Wall curWall = JsonConvert.DeserializeObject<Wall>(JsonMessage);
                     // No check needed to see if it already exists since walls will only be added once
                     // Add the wall into the world 
-                    theWorld.Walls.Add(curWall.GetID(), curWall);
+                    lock (theWorld.Walls)
+                    {
+                        theWorld.Walls.Add(curWall.GetID(), curWall);
+                    }
                     break;
                 case 2:
                     // Convert Json message into Wall object
                     Projectile curProjectile = JsonConvert.DeserializeObject<Projectile>(JsonMessage);
                     // Check if the world contains the object already
-                    if (theWorld.Projectiles.ContainsKey(curProjectile.getID()))
+                    lock (theWorld.Projectiles)
                     {
-                        // Remove the projectile so that it can be updated
-                        theWorld.Projectiles.Remove(curProjectile.getID());
+                        if (theWorld.Projectiles.ContainsKey(curProjectile.getID()))
+                        {
+                            // Remove the projectile so that it can be updated
+                            theWorld.Projectiles.Remove(curProjectile.getID());
+                        }
+                        // Re-add the projectile back into the world
+                        theWorld.Projectiles.Add(curProjectile.getID(), curProjectile); 
                     }
-                    // Re-add the projectile back into the world
-                    theWorld.Projectiles.Add(curProjectile.getID(), curProjectile);
                     break;
                 case 3:
                     // Convert Json message into PowerUp object
                     PowerUp curpowerUp = JsonConvert.DeserializeObject<PowerUp>(JsonMessage);
                     // Check if the world contains the object already
-                    if (theWorld.PowerUps.ContainsKey(curpowerUp.getID()))
+                    lock (theWorld.PowerUps)
                     {
-                        // Remove the PowerUp so that it can be updated
-                        theWorld.PowerUps.Remove(curpowerUp.getID());
+                        if (theWorld.PowerUps.ContainsKey(curpowerUp.getID()))
+                        {
+                            // Remove the PowerUp so that it can be updated
+                            theWorld.PowerUps.Remove(curpowerUp.getID());
+                        }
+                        // Re-add the PowerUp back into the world
+                        theWorld.PowerUps.Add(curpowerUp.getID(), curpowerUp); 
                     }
-                    // Re-add the PowerUp back into the world
-                    theWorld.PowerUps.Add(curpowerUp.getID(), curpowerUp);
                     break;
                 case 4:
                     // Convert Json message into Beam object
                     Beam curBeam = JsonConvert.DeserializeObject<Beam>(JsonMessage);
                     // Check if the world contains the object already
-                    if (theWorld.Beams.ContainsKey(curBeam.GetID()))
+                    lock (theWorld.Beams)
                     {
-                        // Remove the Beam so that it can be updated
-                        theWorld.Beams.Remove(curBeam.GetID());
+                        if (theWorld.Beams.ContainsKey(curBeam.GetID()))
+                        {
+                            // Remove the Beam so that it can be updated
+                            theWorld.Beams.Remove(curBeam.GetID());
+                        }
+                        // Re-add the Beam back into the world
+                        theWorld.Beams.Add(curBeam.GetID(), curBeam); 
                     }
-                    // Re-add the Beam back into the world
-                    theWorld.Beams.Add(curBeam.GetID(), curBeam);
                     break;
             }
         }

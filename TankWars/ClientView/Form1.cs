@@ -24,6 +24,7 @@ namespace TankWars
 
         private const int viewSize = 500;
         private const int menuSize = 40;
+        private DrawingPanel panel;
 
         public Form1(GameController ctl)
         {
@@ -33,15 +34,16 @@ namespace TankWars
             theController.UpdateWorld += OnFrame;
 
             // Set up the form.
-
+            panel = new DrawingPanel(theWorld);
+            panel.Location = new Point(0, menuSize);
+            panel.Size = new Size(viewSize, viewSize);
+            this.Controls.Add(panel);
             // Set the window size
             ClientSize = new Size(viewSize, viewSize + menuSize);
 
             // Set up key and mouse handlers
             this.KeyDown += HandleKeyDown;
             this.KeyUp += HandleKeyUp;
-            DrawingPanel.MouseDown += HandleMouseDown;
-            DrawingPanel.MouseUp += HandleMouseUp;
         }
 
 
@@ -65,7 +67,13 @@ namespace TankWars
             if (e.KeyCode == Keys.S)
                 theController.Movement("down");
             if (e.KeyCode == Keys.W)
-                theController.HandleMoveRequest();
+                theController.Movement("up");
+            if (e.KeyCode == Keys.A)
+                theController.Movement("left");
+            if (e.KeyCode == Keys.D)
+                theController.Movement("right");
+
+            
 
             // Prevent other key handlers from running
             e.SuppressKeyPress = true;
@@ -80,8 +88,7 @@ namespace TankWars
         /// <param name="e"></param>
         private void HandleKeyUp(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.W)
-                theController.CancelMoveRequest();
+                theController.MovementStopped();
         }
 
         /// <summary>
@@ -92,19 +99,18 @@ namespace TankWars
         private void HandleMouseDown(object sender, MouseEventArgs e)
         {
             if (e.Button == MouseButtons.Left)
-                theController.HandleMouseRequest();
+                theController.WeaponFire("left");
+            if(e.Button == MouseButtons.Right)
+            {
+                theController.WeaponFire("right");
+            }
         }
 
-        /// <summary>
-        /// Handle mouse up
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private void HandleMouseUp(object sender, MouseEventArgs e)
+        private void OnMouseMove(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
-                theController.CancelMouseRequest();
+            Point mouseLocation;
+            mouseLocation = e.Location;
+            theController.TurretMouseAngle(mouseLocation);
         }
-
     }
 }
