@@ -27,6 +27,11 @@ namespace TankWars
         // State representing the connection with the server
         private SocketState server = null;
 
+        //Tank object representing us
+        private Tank selfTank;
+        private string playerName;
+        private int playerID;
+
         //bools to register key strokes
         bool leftKeyPressed = false;
         bool rightKeyPressed = false;
@@ -39,13 +44,23 @@ namespace TankWars
         private World theWorld;
 
         /// <summary>
+        /// Returns the world object for the view
+        /// </summary>
+        /// <returns></returns>
+        public World GetWorld()
+        {
+            return theWorld;
+        }
+
+        /// <summary>
         /// This is a connect method for the view once the player presses the 
         /// connect button. 
         /// <parameter> serverName gives the names of the server to connect to</parameter>
         /// </summary>
-        public void Connect(string serverName)
+        public void Connect(string serverName, string name)
         {
             Networking.ConnectToServer(OnConnect, serverName, 11000);
+            playerName = name;
         }
 
         /// <summary>
@@ -61,17 +76,50 @@ namespace TankWars
                 return;
             }
 
-            //Inform the view that we connected
-            Connected();
+            //
+            ss.OnNetworkAction = ReceiveStartup;
+
+            //Send player name to socket
+            Networking.Send(ss.TheSocket, playerName);
 
             //Server is now assigned to the SocketState
             server = ss;
 
-            //Now change the action to receiving messages
-            ss.OnNetworkAction = ReceiveMessage;
-            //Start receiving messages with event loop
+            //Start receiving beginning setup
             Networking.GetData(ss);
 
+        }
+
+        private void ReceiveStartup(SocketState ss)
+        {
+            if (ss.ErrorOccured)
+            {
+                Error("Connection interrupted");
+            }
+
+            ss.OnNetworkAction = ReceiveMessage;
+            //Extract the ID data
+            string startUp = ss.GetData();
+            string[] elements = startUp.Split('\n');
+            int playerID = int.Parse(elements[0]);
+            int worldSize = int.Parse(elements[1]);
+
+            //Setup the world
+            theWorld = new World(worldSize);
+
+            //Update world model with walls
+            foreach(string wall in elements)
+            {
+                if (!wall.Contains("wall"))
+                    continue;
+                UpdateWorldModel(wall, 1);
+            }
+
+            //Call the receive message method indirectly
+            Networking.GetData(ss);
+
+            //Notify view we connected successfully
+            Connected();
         }
 
         /// <summary>
@@ -89,15 +137,6 @@ namespace TankWars
 
             //Start Event loop
             Networking.GetData(socket);
-        }
-
-        /// <summary>
-        /// Returns the world object for the view
-        /// </summary>
-        /// <returns></returns>
-        public World GetWorld()
-        {
-            return theWorld;
         }
 
         /// <summary>
@@ -161,10 +200,6 @@ namespace TankWars
                     continue;
                 }
             }
-
-            //Process the inputs received during update
-            SendTankUpdate(t);
-
             //Notify the View to redraw the world
             UpdateWorld();
         }
@@ -306,6 +341,10 @@ namespace TankWars
                 case 0:
                     // Convert Json message into Tank object 
                     Tank curTank = JsonConvert.DeserializeObject<Tank>(JsonMessage);
+                    //The tank object is us
+                    if (curTank.GetID() == playerID)
+                        selfTank = curTank;
+
                     // Check if the world contains the object already
                     if (theWorld.Tanks.ContainsKey(curTank.GetID()))
                     {
