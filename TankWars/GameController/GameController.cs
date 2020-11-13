@@ -76,7 +76,7 @@ namespace TankWars
                 return;
             }
 
-            //
+            //Set the callback to our startup world drawing method
             ss.OnNetworkAction = ReceiveStartup;
 
             //Send player name to socket
@@ -90,6 +90,11 @@ namespace TankWars
 
         }
 
+        /// <summary>
+        /// This method receives the beginning data for the world 
+        /// and sets up the main framework
+        /// </summary>
+        /// <param name="ss"></param>
         private void ReceiveStartup(SocketState ss)
         {
             if (ss.ErrorOccured)
@@ -97,11 +102,13 @@ namespace TankWars
                 Error("Connection interrupted");
             }
 
+            //Change network action to receive normal flow of data method
             ss.OnNetworkAction = ReceiveMessage;
-            //Extract the ID data
+            
+            //Extract the ID data and world data for setup
             string startUp = ss.GetData();
             string[] elements = startUp.Split('\n');
-            int playerID = int.Parse(elements[0]);
+            playerID = int.Parse(elements[0]);
             int worldSize = int.Parse(elements[1]);
 
             //Setup the world
@@ -168,14 +175,6 @@ namespace TankWars
                     continue;
                 }
 
-                // Check if object is wall
-                curToken = curObj["wall"];
-                if (curToken != null)
-                {
-                    UpdateWorldModel(curMessage, 1);
-                    continue;
-                }
-
                 // Check if object is projectile
                 curToken = curObj["proj"];
                 if (curToken != null)
@@ -208,7 +207,7 @@ namespace TankWars
         /// Method for registering an attack by a tank
         /// </summary>
         /// <param name="whichSide"></param>
-        public void WeaponFire(string whichSide, Tank t)
+        public void WeaponFire(string whichSide)
         {
             //Determines which weapon fired
             if (whichSide == "left")
@@ -217,7 +216,7 @@ namespace TankWars
                 rightClickPressed = true;
 
             //Update server
-            SendTankUpdate(t);
+            SendTankUpdate(selfTank);
         }
 
         /// <summary>
@@ -226,7 +225,7 @@ namespace TankWars
         /// to be called
         /// </summary>
         /// <param name="keyPressed"></param>
-        public void Movement(string keyPressed, Tank t)
+        public void Movement(string keyPressed)
         {
             //Sets the boolean when appropriate key is pressed
             switch (keyPressed)
@@ -264,13 +263,13 @@ namespace TankWars
             }
 
             //Send tank update
-            SendTankUpdate(t);
+            SendTankUpdate(selfTank);
         }
 
         /// <summary>
         /// Method when the tank registers no key pressed
         /// </summary>
-        public void MovementStopped(Tank t)
+        public void MovementStopped()
         {
             downKeyPressed = false;
             upKeyPressed = false;
@@ -278,7 +277,7 @@ namespace TankWars
             rightKeyPressed = false;
 
             //Send tank update
-            SendTankUpdate(t);
+            SendTankUpdate(selfTank);
         }
 
         /// <summary>
