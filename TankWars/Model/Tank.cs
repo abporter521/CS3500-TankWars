@@ -38,7 +38,7 @@ namespace TankWars
 
         //Health points of the tank object
         [JsonProperty(PropertyName = "hp")]
-        private int hitPoints = Constants.MaxHP;
+        private int hitPoints = 3;
 
         //Player's score
         [JsonProperty(PropertyName = "score")]

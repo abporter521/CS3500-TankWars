@@ -19,11 +19,11 @@ namespace TankWars
         public delegate void EventHandler();
         public event EventHandler UpdateWorld;
 
-        public delegate void ConnectedHandler();
-        public event ConnectedHandler Connected;
-
         public delegate void ErrorHandler(string err);
         public event ErrorHandler Error;
+
+        public delegate void PlayerInfoGiven(int info);
+        public event PlayerInfoGiven PlayerIDGiven;
 
         // State representing the connection with the server
         private SocketState server = null;
@@ -60,8 +60,8 @@ namespace TankWars
         /// </summary>
         public void Connect(string serverName, string name)
         {
-            Networking.ConnectToServer(OnConnect, serverName, 11000);
             playerName = name;
+            Networking.ConnectToServer(OnConnect, serverName, 11000);
         }
 
         /// <summary>
@@ -73,7 +73,7 @@ namespace TankWars
             //Check if the socket state shows that an error occurred
             if (ss.ErrorOccured)
             {
-                Error("Connection interrupted");
+                Error(ss.ErrorMessage);
                 return;
             }
 
@@ -100,7 +100,7 @@ namespace TankWars
         {
             if (ss.ErrorOccured)
             {
-                Error("Connection interrupted");
+                Error(ss.ErrorMessage);
             }
 
             //Change network action to receive normal flow of data method
@@ -112,22 +112,17 @@ namespace TankWars
             playerID = int.Parse(elements[0]);
             int worldSize = int.Parse(elements[1]);
 
+            //Send the player ID to view for drawing purposes
+            PlayerIDGiven(playerID);
+
             //Setup the world
             theWorld = new World(worldSize);
 
-            //Update world model with walls
-            foreach (string wall in elements)
-            {
-                if (!wall.Contains("wall"))
-                    continue;
-                UpdateWorldModel(wall, 1);
-            }
+            //Clear old unneeded data
+            ss.ClearData();
 
             //Call the receive message method indirectly
             Networking.GetData(ss);
-
-            //Notify view we connected successfully
-            Connected();
         }
 
         /// <summary>
@@ -138,7 +133,7 @@ namespace TankWars
         {
             if (socket.ErrorOccured)
             {
-                Error("Lost connection to server");
+                Error(socket.ErrorMessage);
                 return;
             }
             ProcessMessage(socket);
@@ -173,6 +168,14 @@ namespace TankWars
                 if (curToken != null)
                 {
                     UpdateWorldModel(curMessage, 0);
+                    continue;
+                }
+
+                //Update world model with walls
+                curToken = curObj["wall"];
+                if (curToken != null)
+                {
+                    UpdateWorldModel(curMessage, 1);
                     continue;
                 }
 
@@ -388,7 +391,7 @@ namespace TankWars
                             theWorld.Projectiles.Remove(curProjectile.getID());
                         }
                         // Re-add the projectile back into the world
-                        theWorld.Projectiles.Add(curProjectile.getID(), curProjectile); 
+                        theWorld.Projectiles.Add(curProjectile.getID(), curProjectile);
                     }
                     break;
                 case 3:
@@ -403,7 +406,7 @@ namespace TankWars
                             theWorld.PowerUps.Remove(curpowerUp.getID());
                         }
                         // Re-add the PowerUp back into the world
-                        theWorld.PowerUps.Add(curpowerUp.getID(), curpowerUp); 
+                        theWorld.PowerUps.Add(curpowerUp.getID(), curpowerUp);
                     }
                     break;
                 case 4:
@@ -418,7 +421,7 @@ namespace TankWars
                             theWorld.Beams.Remove(curBeam.GetID());
                         }
                         // Re-add the Beam back into the world
-                        theWorld.Beams.Add(curBeam.GetID(), curBeam); 
+                        theWorld.Beams.Add(curBeam.GetID(), curBeam);
                     }
                     break;
             }

@@ -18,6 +18,7 @@ namespace TankWars
         //Variable containing the current world of the game
         private World World;
 
+        private int selfTankID;
         //Checks that walls will not be drawn more than once per game
         private bool alreadyDrawn = false;
 
@@ -25,6 +26,13 @@ namespace TankWars
         public DrawingPanel(World theWorld)
         {
             World = theWorld;
+
+        }
+
+        public DrawingPanel(World theWorld, int myID)
+        {
+            World = theWorld;
+            selfTankID = myID;
         }
 
         private static int WorldSpaceToImageSpace(int size, double w)
@@ -103,6 +111,11 @@ namespace TankWars
             }
         }
 
+        /// <summary>
+        /// Method will draw the turrets on top of the tanks
+        /// </summary>
+        /// <param name="o"></param>
+        /// <param name="e"></param>
         private void turretDrawer(object o, PaintEventArgs e)
         {
             //Extract tank from object so that we can assign turret color to correct tank
@@ -156,6 +169,11 @@ namespace TankWars
             }
         }
 
+        /// <summary>
+        /// Method that draws the wall objects
+        /// </summary>
+        /// <param name="o"></param>
+        /// <param name="e"></param>
         private void WallDrawer(object o, PaintEventArgs e)
         {
             Wall w = o as Wall;
@@ -235,14 +253,34 @@ namespace TankWars
             Pen whitePen = new Pen(Color.White, 5);
 
             //Create points for beam attack
-            Point endx = new Point((int)(b.Origin.GetX() + Math.Cos(b.Direction.ToAngle()) * 10000), (int)(b.Origin.GetY() + Math.Sin(b.Direction.ToAngle())*10000));
+            Point endx = new Point((int)(b.Origin.GetX() + Math.Cos(b.Direction.ToAngle()) * 10000), (int)(b.Origin.GetY() + Math.Sin(b.Direction.ToAngle()) * 10000));
             Point start = new Point((int)b.Origin.GetX(), (int)b.Origin.GetY());
             //Draw beam
             e.Graphics.DrawLine(whitePen, start, endx);
         }
         // This method is invoked when the DrawingPanel needs to be re-drawn
-        protected void OnPaint(PaintEventArgs e)
+        protected override void OnPaint(PaintEventArgs e)
         {
+            //Do not draw anything if the world has not been assigned yet
+            if (World == null)
+                return;
+
+            double playerX = World.Tanks[selfTankID].Location.GetX();// (the player's world-space X coordinate)
+            double playerY = World.Tanks[selfTankID].Location.GetY();//... (the player's world-space Y coordinate)
+
+            // calculate view/world size ratio
+            double ratio = (double)500 / (double)World.Size;
+            int halfSizeScaled = (int)(World.Size / 2.0 * ratio);
+
+            double inverseTranslateX = -WorldSpaceToImageSpace(World.Size, playerX) + halfSizeScaled;
+            double inverseTranslateY = -WorldSpaceToImageSpace(World.Size, playerY) + halfSizeScaled;
+
+            e.Graphics.TranslateTransform((float)inverseTranslateX, (float)inverseTranslateY);
+
+            //Draw the world
+            Rectangle rect = new Rectangle(0, 0, World.Size, World.Size);
+            e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\WallSprite.png"), rect);
+
             lock (World.Tanks)
             {
                 // Draw the players
@@ -260,8 +298,8 @@ namespace TankWars
                     DrawObjectWithTransform(e, pow, World.Size, pow.position.GetX(), pow.position.GetY(), 0, PowerUpDrawer);
                 }
             }
-            
-            lock(World.Projectiles)
+
+            lock (World.Projectiles)
             {
                 //Draw projectiles
                 foreach (Projectile proj in World.Projectiles.Values)
@@ -293,9 +331,10 @@ namespace TankWars
                         DrawObjectWithTransform(e, wall, World.Size, x, y, 0, WallDrawer);
                     }
                 }
-
                 alreadyDrawn = true;
             }
+            
+            //Let the base form do anything it needs to move on
             base.OnPaint(e);
         }
     }

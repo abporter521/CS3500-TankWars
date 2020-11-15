@@ -22,9 +22,16 @@ namespace TankWars
         // The controller owns the world, but we have a reference to it
         private World theWorld;
 
+        //Sets up the view of the client
         private const int viewSize = 500;
         private const int menuSize = 40;
         private DrawingPanel panel;
+
+        //These are our client window comoponents
+        Button connect;
+        TextBox IPName;
+        TextBox playerName;
+
 
         public Form1(GameController ctl)
         {
@@ -41,11 +48,36 @@ namespace TankWars
             // Set the window size
             ClientSize = new Size(viewSize, viewSize + menuSize);
 
+            //Save our boxes to variables
+            connect = connectButton;
+            IPName = hostText;
+            playerName = playerText;
+
             // Set up key and mouse handlers
             this.KeyDown += HandleKeyDown;
             this.KeyUp += HandleKeyUp;
+            theController.PlayerIDGiven += InitializeWithID;
+            theController.Error += DisplayErrorMessage;
         }
 
+        /// <summary>
+        /// This handler method displays a message if one occurrs to the user
+        /// </summary>
+        /// <param name="err"></param>
+        private void DisplayErrorMessage(string err)
+        {
+            MessageBox.Show(err);
+        }
+
+        /// <summary>
+        /// Once network sends player ID, we send this to the drawing panel 
+        /// This allows us to know which area to center the view on
+        /// </summary>
+        /// <param name="info"></param>
+        private void InitializeWithID(int info)
+        {
+            panel = new DrawingPanel(theWorld, info);
+        }
 
         /// <summary>
         /// Handler for the controller's UpdateArrived event
@@ -111,6 +143,21 @@ namespace TankWars
             Point mouseLocation;
             mouseLocation = e.Location;
             theController.TurretMouseAngle(mouseLocation);
+        }
+
+        private void connectButton_Click(object sender, EventArgs e)
+        {
+            playerName.Enabled = false;
+            connectButton.Enabled = false;
+            IPName.Enabled = false;
+            //Enable the global form to capture key presses
+            KeyPreview = true;
+
+            //Make sure user enters a name
+            if (playerName.Text == "")
+                DisplayErrorMessage("Please enter player name");
+            //Connect with Server
+            theController.Connect(IPName.Text, playerName.Text);
         }
     }
 }
