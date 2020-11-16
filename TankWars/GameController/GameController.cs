@@ -40,6 +40,7 @@ namespace TankWars
         bool downKeyPressed = false;
         bool leftClickPressed = false;
         bool rightClickPressed = false;
+        bool tankInfoReceived = false;
 
         //Contains information of the game world
         private World theWorld;
@@ -112,9 +113,6 @@ namespace TankWars
             playerID = int.Parse(elements[0]);
             int worldSize = int.Parse(elements[1]);
 
-            //Send the player ID to view for drawing purposes
-            PlayerIDGiven(playerID);
-
             //Setup the world
             theWorld = new World(worldSize);
 
@@ -123,6 +121,7 @@ namespace TankWars
 
             //Call the receive message method indirectly
             Networking.GetData(ss);
+
         }
 
         /// <summary>
@@ -136,7 +135,10 @@ namespace TankWars
                 Error(socket.ErrorMessage);
                 return;
             }
+            //Update the world on the new Json info
             ProcessMessage(socket);
+
+            socket.ClearData();
 
             //Start Event loop
             Networking.GetData(socket);
@@ -161,6 +163,11 @@ namespace TankWars
             // value that references it's type within the UpdateWorldModel method.
             foreach (string curMessage in parsedMessage)
             {
+                //Skip any strings that are empty so to not throw error
+                if (curMessage == "")
+                    continue;
+
+                //Parse the Json object and compare to other objects
                 curObj = JObject.Parse(curMessage);
 
                 // Check if object is tank
@@ -168,6 +175,7 @@ namespace TankWars
                 if (curToken != null)
                 {
                     UpdateWorldModel(curMessage, 0);
+                    tankInfoReceived = true;
                     continue;
                 }
 
@@ -203,6 +211,11 @@ namespace TankWars
                     continue;
                 }
             }
+
+            //Send the player ID to view for drawing purposes
+            if(tankInfoReceived)
+                PlayerIDGiven(playerID);
+
             //Notify the View to redraw the world
             UpdateWorld();
         }

@@ -23,7 +23,7 @@ namespace TankWars
         private World theWorld;
 
         //Sets up the view of the client
-        private const int viewSize = 500;
+        private const int viewSize = 850;
         private const int menuSize = 40;
         private DrawingPanel panel;
 
@@ -76,7 +76,8 @@ namespace TankWars
         /// <param name="info"></param>
         private void InitializeWithID(int info)
         {
-            panel = new DrawingPanel(theWorld, info);
+            panel.SetWorld(theController.GetWorld());
+            panel.SetPlayerId(info);
         }
 
         /// <summary>

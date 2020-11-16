@@ -17,22 +17,32 @@ namespace TankWars
     {
         //Variable containing the current world of the game
         private World World;
-
         private int selfTankID;
-        //Checks that walls will not be drawn more than once per game
-        private bool alreadyDrawn = false;
+
+        //Variables for images
+        Image wallSegment = Image.FromFile(@"..\..\..\Resources\Images\WallSprite.png");
+        Image background = Image.FromFile(@"..\..\..\Resources\Images\Background.png");
+        Image redTank = Image.FromFile(@"..\..\..\Resources\Images\RedTank.png");
+        Image yellowTank = Image.FromFile(@"..\..\..\Resources\Images\YellowTank.png");
+        Image blueTank = Image.FromFile(@"..\..\..\Resources\Images\BlueTank.png");
+        Image darkTank = Image.FromFile(@"..\..\..\Resources\Images\DarkTank.png");
+    
 
         //The constructor for the DrawingPanwl
         public DrawingPanel(World theWorld)
         {
+            this.DoubleBuffered = true;
             World = theWorld;
-
         }
 
-        public DrawingPanel(World theWorld, int myID)
+        public void SetWorld(World theWorld)
         {
             World = theWorld;
-            selfTankID = myID;
+        }
+
+        public void SetPlayerId(int IDnum)
+        {
+            selfTankID = IDnum;
         }
 
         private static int WorldSpaceToImageSpace(int size, double w)
@@ -76,11 +86,11 @@ namespace TankWars
             {
 
                 case 0:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\BlueTank.png"), -30, -30);
+                    e.Graphics.DrawImage(blueTank, -30, -30);
                     DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
                     break;
                 case 1:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\DarkTank.png"), -30, -30);
+                    e.Graphics.DrawImage(darkTank, -30, -30);
                     DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
                     break;
                 case 2:
@@ -100,11 +110,11 @@ namespace TankWars
                     DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
                     break;
                 case 6:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\RedTank.png"), -30, -30);
+                    e.Graphics.DrawImage(redTank, -30, -30);
                     DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
                     break;
                 case 7:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\YellowTank.png"), -30, -30);
+                    e.Graphics.DrawImage(yellowTank, -30, -30);
                     DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
                     break;
 
@@ -146,7 +156,7 @@ namespace TankWars
 
                 //Light Green turret
                 case 3:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\LightGreenTankTurret.png"), -25, -25);
+                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\LightGreenTurret.png"), -25, -25);
                     break;
                 case 4:
                     e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\OrangeTurret.png"), -25, -25);
@@ -178,7 +188,7 @@ namespace TankWars
         {
             Wall w = o as Wall;
 
-            e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\WallSprite.png"), -25, -25);
+            e.Graphics.DrawImage(wallSegment, -25, -25);
         }
 
         /// <summary>
@@ -269,7 +279,7 @@ namespace TankWars
             double playerY = World.Tanks[selfTankID].Location.GetY();//... (the player's world-space Y coordinate)
 
             // calculate view/world size ratio
-            double ratio = (double)500 / (double)World.Size;
+            double ratio = (double)850 / (double)World.Size;
             int halfSizeScaled = (int)(World.Size / 2.0 * ratio);
 
             double inverseTranslateX = -WorldSpaceToImageSpace(World.Size, playerX) + halfSizeScaled;
@@ -279,7 +289,7 @@ namespace TankWars
 
             //Draw the world
             Rectangle rect = new Rectangle(0, 0, World.Size, World.Size);
-            e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\WallSprite.png"), rect);
+            e.Graphics.DrawImage(background, rect);
 
             lock (World.Tanks)
             {
@@ -319,8 +329,6 @@ namespace TankWars
 
             lock (World.Walls)
             {
-                if (!alreadyDrawn)
-                {
                     //Draw walls
                     foreach (Wall wall in World.Walls.Values)
                     {
@@ -330,8 +338,6 @@ namespace TankWars
 
                         DrawObjectWithTransform(e, wall, World.Size, x, y, 0, WallDrawer);
                     }
-                }
-                alreadyDrawn = true;
             }
             
             //Let the base form do anything it needs to move on
