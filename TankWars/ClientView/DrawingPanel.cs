@@ -135,43 +135,35 @@ namespace TankWars
             {
                 //blue tank
                 case 0:
-                    e.Graphics.DrawImage(blueTank, -30, -30);
-                    DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
+                    e.Graphics.DrawImage(blueTank, -30, -30, 60, 60);
                     break;
                 //dark tank
                 case 1:
-                    e.Graphics.DrawImage(darkTank, -30, -30);
-                    DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
+                    e.Graphics.DrawImage(darkTank, -30, -30, 60, 60);
                     break;
                 //green tank
                 case 2:
-                    e.Graphics.DrawImage(greenTank, -30, -30);
-                    DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
+                    e.Graphics.DrawImage(greenTank, -30, -30, 60, 60);
                     break;
                 //light green tank
                 case 3:
-                    e.Graphics.DrawImage(lightGreenTank, -30, -30);
-                    DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
+                    e.Graphics.DrawImage(lightGreenTank, -30, -30, 60, 60);
                     break;
                 //orange tank
                 case 4:
-                    e.Graphics.DrawImage(orangeTank, -30, -30);
-                    DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
+                    e.Graphics.DrawImage(orangeTank, -30, -30, 60, 60);
                     break;
                 //purple tank
                 case 5:
-                    e.Graphics.DrawImage(purpleTank, -30, -30);
-                    DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
+                    e.Graphics.DrawImage(purpleTank, -30, -30, 60, 60);
                     break;
                 //red tank
                 case 6:
-                    e.Graphics.DrawImage(redTank, -30, -30);
-                    DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
+                    e.Graphics.DrawImage(redTank, -30, -30, 60, 60);
                     break;
                 //yellow tank
                 case 7:
-                    e.Graphics.DrawImage(yellowTank, -30, -30);
-                    DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
+                    e.Graphics.DrawImage(yellowTank, -30, -30, 60, 60);
                     break;
 
             }
@@ -197,41 +189,41 @@ namespace TankWars
             {
                 //blue turret
                 case 0:
-                    e.Graphics.DrawImage(blueTurret, 0, 0);
+                    e.Graphics.DrawImage(blueTurret, -25, -25, 50, 50);
                     break;
 
                 //Dark turret
                 case 1:
-                    e.Graphics.DrawImage(darkTurret, -25, -25);
+                    e.Graphics.DrawImage(darkTurret, -25,-25, 50, 50);
                     break;
 
                 //Green turret
                 case 2:
-                    e.Graphics.DrawImage(greenTurret, -25, -25);
+                    e.Graphics.DrawImage(greenTurret, -25, -25, 50, 50);
                     break;
 
                 //Light Green turret
                 case 3:
-                    e.Graphics.DrawImage(lgTurret, -25, -25);
+                    e.Graphics.DrawImage(lgTurret, -25, -25, 50, 50);
                     break;
                 //Orange turret
                 case 4:
-                    e.Graphics.DrawImage(orangeTurret, -25, -25);
+                    e.Graphics.DrawImage(orangeTurret, -25, -25, 50, 50);
                     break;
 
                 //Purple turret
                 case 5:
-                    e.Graphics.DrawImage(purpleTurret, -25, -25);
+                    e.Graphics.DrawImage(purpleTurret, -25, -25, 50, 50);
                     break;
 
                 //Red turret
                 case 6:
-                    e.Graphics.DrawImage(redTurret, -25, -25);
+                    e.Graphics.DrawImage(redTurret, -25, -25, 50, 50);
                     break;
 
                 //Yellow turret
                 case 7:
-                    e.Graphics.DrawImage(yellowTurret, -25, -25);
+                    e.Graphics.DrawImage(yellowTurret, -25, -25, 50, 50);
                     break;
             }
         }
@@ -355,6 +347,7 @@ namespace TankWars
                 foreach (Tank tank in World.Tanks.Values)
                 {
                     DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), tank.Orientation.ToAngle(), DrawTank);
+                    DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), tank.AimDirection.ToAngle(), turretDrawer);
                 }
             }
 
