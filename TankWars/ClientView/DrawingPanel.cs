@@ -49,6 +49,10 @@ namespace TankWars
         readonly Image yellowShot = Image.FromFile(@"..\..\..\Resources\Images\shot-yellow.png");
         readonly Image powerup = Image.FromFile(@"..\..\..\Resources\Images\powerUp.png");
 
+        //Paintbrushes
+        private Pen redPen = new Pen(Color.Red);
+        private Pen yellowPen = new Pen(Color.Yellow);
+        private Pen greenPen = new Pen(Color.LawnGreen);
 
 
         //The constructor for the DrawingPanwl
@@ -194,7 +198,7 @@ namespace TankWars
 
                 //Dark turret
                 case 1:
-                    e.Graphics.DrawImage(darkTurret, -25,-25, 50, 50);
+                    e.Graphics.DrawImage(darkTurret, -25, -25, 50, 50);
                     break;
 
                 //Green turret
@@ -244,7 +248,7 @@ namespace TankWars
             if (w.GetP1().GetX() == w.GetP2().GetX())
             {
                 //set offset from center of map
-                int horizontalOffset = (int)w.GetP1().GetX() -25;
+                int horizontalOffset = (int)w.GetP1().GetX() - 25;
 
                 //Determines which point is start and which is end
                 if ((int)w.GetP1().GetY() > (int)w.GetP2().GetY())
@@ -259,8 +263,8 @@ namespace TankWars
                 }
 
                 //Draw vertical walls
-                for (int i =start; i <= end; i += 50)
-                    e.Graphics.DrawImage(wallSegment, horizontalOffset, i-25, 50, 50);
+                for (int i = start; i <= end; i += 50)
+                    e.Graphics.DrawImage(wallSegment, horizontalOffset, i - 25, 50, 50);
             }
             else //its a horizontal wall segment
             {
@@ -280,8 +284,8 @@ namespace TankWars
                 }
 
                 //Draw horizontal wall segments
-                for (int i = start ; i <= end; i += 50)
-                    e.Graphics.DrawImage(wallSegment, i-25, verticalOffset, 50, 50);
+                for (int i = start; i <= end; i += 50)
+                    e.Graphics.DrawImage(wallSegment, i - 25, verticalOffset, 50, 50);
             }
         }
 
@@ -316,28 +320,28 @@ namespace TankWars
             {
 
                 case 0:
-                    e.Graphics.DrawImage(blueShot, -15, -15);
+                    e.Graphics.DrawImage(blueShot, -15, -15, 30, 30);
                     break;
                 case 1:
-                    e.Graphics.DrawImage(greyShot, -15, -15);
+                    e.Graphics.DrawImage(greyShot, -15, -15, 30, 30);
                     break;
                 case 2:
-                    e.Graphics.DrawImage(greenShot, -15, -15);
+                    e.Graphics.DrawImage(greenShot, -15, -15, 30, 30);
                     break;
                 case 3:
-                    e.Graphics.DrawImage(greenShot, -15, -15);
+                    e.Graphics.DrawImage(greenShot, -15, -15, 30, 30);
                     break;
                 case 4:
-                    e.Graphics.DrawImage(brownShot, -15, -15);
+                    e.Graphics.DrawImage(brownShot, -15, -15, 30, 30);
                     break;
                 case 5:
-                    e.Graphics.DrawImage(violetShot, -15, -15);
+                    e.Graphics.DrawImage(violetShot, -15, -15, 30, 30);
                     break;
                 case 6:
-                    e.Graphics.DrawImage(redShot, -15, -15);
+                    e.Graphics.DrawImage(redShot, -15, -15, 30, 30);
                     break;
                 case 7:
-                    e.Graphics.DrawImage(yellowShot, -15, -15);
+                    e.Graphics.DrawImage(yellowShot, -15, -15, 30, 30);
                     break;
             }
         }
@@ -362,7 +366,38 @@ namespace TankWars
             //Draw beam
             e.Graphics.DrawLine(whitePen, start, endx);
         }
-       
+
+        /// <summary>
+        /// Draws the healthbar above the tank
+        /// </summary>
+        /// <param name="e"></param>
+        /// 
+        private void HealthDrawer(object o, PaintEventArgs e)
+        {
+            Tank t = o as Tank;
+            int health = t.HealthLevel;
+            Rectangle healthbar;
+            //Switch for health level bar
+            switch (health)
+            {
+                case 0:
+                    //Draw explosion
+                    break;
+                case 1:
+                    healthbar = new Rectangle((int)t.Location.GetX(), (int)t.Location.GetY(), 5, 3);
+                    e.Graphics.DrawRectangle(redPen, healthbar);
+                    break;
+                case 2:
+                    healthbar = new Rectangle((int)t.Location.GetX(), (int)t.Location.GetY(), 10, 3);
+                    e.Graphics.DrawRectangle(yellowPen, healthbar);
+                    break;
+                case 3:
+                    healthbar = new Rectangle((int)t.Location.GetX(), (int)t.Location.GetY(), 20, 3);
+                    e.Graphics.DrawRectangle(greenPen, healthbar);
+                    break;
+            }
+        }
+
         // This method is invoked when the DrawingPanel needs to be re-drawn
         protected override void OnPaint(PaintEventArgs e)
         {
@@ -393,6 +428,8 @@ namespace TankWars
                 {
                     DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), tank.Orientation.ToAngle(), DrawTank);
                     DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), tank.AimDirection.ToAngle(), turretDrawer);
+                    DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), 0, HealthDrawer);
+
                 }
             }
 
@@ -431,7 +468,7 @@ namespace TankWars
                     //find the direction of the wall
                     double y = Math.Abs(wall.GetP1().GetY() - wall.GetP2().GetY());
                     double x = Math.Abs(wall.GetP1().GetX() - wall.GetP2().GetX());
-                    
+
                     DrawObjectWithTransform(e, wall, World.Size, 0, 0, 0, WallDrawer);
                 }
             }

@@ -411,8 +411,12 @@ namespace TankWars
                             // Remove the tank so that it can be updated
                             theWorld.Tanks.Remove(curTank.GetID());
                         }
-                        // Re-add the tank back into the world
-                        theWorld.Tanks.Add(curTank.GetID(), curTank);
+                        //Check if tank has died
+                        if (!curTank.HasDied)
+                        {
+                            // Re-add the tank back into the world
+                            theWorld.Tanks.Add(curTank.GetID(), curTank);
+                        }
                     }
                     break;
                 case 1:
@@ -436,8 +440,12 @@ namespace TankWars
                             // Remove the projectile so that it can be updated
                             theWorld.Projectiles.Remove(curProjectile.getID());
                         }
-                        // Re-add the projectile back into the world
-                        theWorld.Projectiles.Add(curProjectile.getID(), curProjectile);
+                        //Check if projectile is still active
+                        if (!curProjectile.Died)
+                        {
+                            // Re-add the projectile back into the world
+                            theWorld.Projectiles.Add(curProjectile.getID(), curProjectile);
+                        }
                     }
                     break;
                 case 3:
@@ -469,6 +477,9 @@ namespace TankWars
                             // Remove the Beam so that it can be updated
                             theWorld.Beams.Remove(curBeam.GetID());
                         }
+
+                        //Check if beam is dead
+
                         // Re-add the Beam back into the world
                         theWorld.Beams.Add(curBeam.GetID(), curBeam);
                     }
