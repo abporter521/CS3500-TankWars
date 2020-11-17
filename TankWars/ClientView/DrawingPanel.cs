@@ -235,9 +235,54 @@ namespace TankWars
         /// <param name="e"></param>
         private void WallDrawer(object o, PaintEventArgs e)
         {
+            //Variables for the loops
+            int start;
+            int end;
             Wall w = o as Wall;
 
-            e.Graphics.DrawImage(wallSegment, -25, -25);
+            //Check if Vertical wall segment
+            if (w.GetP1().GetX() == w.GetP2().GetX())
+            {
+                //set offset from center of map
+                int horizontalOffset = (int)w.GetP1().GetX() -25;
+
+                //Determines which point is start and which is end
+                if ((int)w.GetP1().GetY() > (int)w.GetP2().GetY())
+                {
+                    start = (int)w.GetP2().GetY();
+                    end = (int)w.GetP1().GetY();
+                }
+                else
+                {
+                    start = (int)w.GetP1().GetY();
+                    end = (int)w.GetP2().GetY();
+                }
+
+                //Draw vertical walls
+                for (int i =start; i <= end; i += 50)
+                    e.Graphics.DrawImage(wallSegment, horizontalOffset, i-25, 50, 50);
+            }
+            else //its a horizontal wall segment
+            {
+                //Determine vertical offset from center of map
+                int verticalOffset = (int)w.GetP1().GetY() - 25;
+
+                //Determine which point is end and which is start
+                if ((int)w.GetP1().GetX() > (int)w.GetP2().GetX())
+                {
+                    start = (int)w.GetP2().GetX();
+                    end = (int)w.GetP1().GetX();
+                }
+                else
+                {
+                    start = (int)w.GetP1().GetX();
+                    end = (int)w.GetP2().GetX();
+                }
+
+                //Draw horizontal wall segments
+                for (int i = start ; i <= end; i += 50)
+                    e.Graphics.DrawImage(wallSegment, i-25, verticalOffset, 50, 50);
+            }
         }
 
         /// <summary>
@@ -383,11 +428,11 @@ namespace TankWars
                 //Draw walls
                 foreach (Wall wall in World.Walls.Values)
                 {
-                    //find the center of the wall
+                    //find the direction of the wall
                     double y = Math.Abs(wall.GetP1().GetY() - wall.GetP2().GetY());
                     double x = Math.Abs(wall.GetP1().GetX() - wall.GetP2().GetX());
-
-                    DrawObjectWithTransform(e, wall, World.Size, x, y, 0, WallDrawer);
+                    
+                    DrawObjectWithTransform(e, wall, World.Size, 0, 0, 0, WallDrawer);
                 }
             }
 

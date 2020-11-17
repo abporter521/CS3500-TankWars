@@ -269,11 +269,12 @@ namespace TankWars
 
         public void TurretMouseAngle(Point mousePos)
         {
-            double x = mousePos.X - selfTank.Location.GetX();
-            double y = mousePos.Y - selfTank.Location.GetY();
+            double x = mousePos.X - (selfTank.Location.GetX() + theWorld.Size / 2);
+            double y = mousePos.Y - (selfTank.Location.GetY() + theWorld.Size / 2);
             Vector2D newAim = new Vector2D(x, y);
+            newAim.Normalize();
             selfTank.AimDirection = newAim;
-            UpdateWorld();
+           // UpdateWorld();
 
         }
 
@@ -450,8 +451,11 @@ namespace TankWars
                             // Remove the PowerUp so that it can be updated
                             theWorld.PowerUps.Remove(curpowerUp.getID());
                         }
-                        // Re-add the PowerUp back into the world
-                        theWorld.PowerUps.Add(curpowerUp.getID(), curpowerUp);
+                        if (!curpowerUp.collected)
+                        {
+                            // Re-add the PowerUp back into the world
+                            theWorld.PowerUps.Add(curpowerUp.getID(), curpowerUp);
+                        }
                     }
                     break;
                 case 4:

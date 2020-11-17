@@ -22,6 +22,8 @@ namespace TankWars
         // The controller owns the world, but we have a reference to it
         private World theWorld;
 
+        private bool worldExists = false;
+
         //Sets up the view of the client
         private const int viewSize = 850;
         private const int menuSize = 40;
@@ -35,6 +37,7 @@ namespace TankWars
 
         public Form1(GameController ctl)
         {
+            //Set up the general handlers and variables of the form
             InitializeComponent();
             theController = ctl;
             theWorld = theController.GetWorld();
@@ -56,6 +59,10 @@ namespace TankWars
             // Set up key and mouse handlers
             this.KeyDown += HandleKeyDown;
             this.KeyUp += HandleKeyUp;
+            //Set up handlers for controls
+            
+            panel.MouseMove += OnMouseMove;
+            panel.MouseClick += HandleMouseClick;
             theController.PlayerIDGiven += InitializeWithID;
             theController.Error += DisplayErrorMessage;
         }
@@ -78,6 +85,8 @@ namespace TankWars
         {
             panel.SetWorld(theController.GetWorld());
             panel.SetPlayerId(info);
+            theWorld = theController.GetWorld();
+            worldExists = true;
         }
 
         /// <summary>
@@ -129,21 +138,30 @@ namespace TankWars
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void HandleMouseDown(object sender, MouseEventArgs e)
+        private void HandleMouseClick(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
-                theController.WeaponFire("left");
-            if(e.Button == MouseButtons.Right)
+            if (worldExists)
             {
-                theController.WeaponFire("right");
+                if (e.Button == MouseButtons.Left)
+                    theController.WeaponFire("left");
+                if (e.Button == MouseButtons.Right)
+                {
+                    theController.WeaponFire("right");
+                }
             }
         }
 
+        //Tracks mouse movement to move turret
         private void OnMouseMove(object sender, MouseEventArgs e)
         {
-            Point mouseLocation;
-            mouseLocation = e.Location;
-            theController.TurretMouseAngle(mouseLocation);
+            if (worldExists)
+            {
+                //Set up the mouse handler
+                Point mouseLocation = DrawingPanel.MousePosition;
+                mouseLocation.X = (theWorld.Size + mouseLocation.X)/ 2;
+                mouseLocation.Y = (theWorld.Size + mouseLocation.Y) / 2;
+                theController.TurretMouseAngle(mouseLocation);
+            }
         }
 
         private void connectButton_Click(object sender, EventArgs e)
@@ -156,7 +174,11 @@ namespace TankWars
 
             //Make sure user enters a name
             if (playerName.Text == "")
+            {
                 DisplayErrorMessage("Please enter player name");
+                return;
+            }
+
             //Connect with Server
             theController.Connect(IPName.Text, playerName.Text);
         }
