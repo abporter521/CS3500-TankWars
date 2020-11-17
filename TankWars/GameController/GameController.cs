@@ -13,15 +13,27 @@ namespace TankWars
     //TODO:  KEY HANDLERS
     //       SET UP EVENTS FOR COMMUNICATION WITH VIEW
     //       ADD LOCKS TO WORLD UPDATE METHOD
+
+    /// <summary>
+    /// This is our game controller class.  This class will communicate with the 
+    /// game server on behalf of the view.  This controller has methods 
+    /// that register tank movement and send it to the server.
+    /// The controller also receives data from the server and updates the 
+    /// world and notifies the view to redraw
+    /// 
+    /// @Author Andrew Porter & Adam Scott
+    /// </summary>
     public class GameController
     {
-
+        //Event to tell the view to redraw the panel
         public delegate void EventHandler();
         public event EventHandler UpdateWorld;
 
+        //Event that will display an error to the user
         public delegate void ErrorHandler(string err);
         public event ErrorHandler Error;
 
+        //Allows the view to give the drawing panel the players ID to center the game screen
         public delegate void PlayerInfoGiven(int info);
         public event PlayerInfoGiven PlayerIDGiven;
 
@@ -99,6 +111,7 @@ namespace TankWars
         /// <param name="ss"></param>
         private void ReceiveStartup(SocketState ss)
         {
+            //Check for error
             if (ss.ErrorOccured)
             {
                 Error(ss.ErrorMessage);
@@ -116,7 +129,7 @@ namespace TankWars
             //Setup the world
             theWorld = new World(worldSize);
 
-            //Clear old unneeded data
+            //Clear startup data. We have what is needed
             ss.ClearData();
 
             //Call the receive message method indirectly
@@ -130,15 +143,15 @@ namespace TankWars
         /// <param name="socket"></param>
         private void ReceiveMessage(SocketState socket)
         {
+            //Check for error
             if (socket.ErrorOccured)
             {
                 Error(socket.ErrorMessage);
                 return;
             }
+
             //Update the world on the new Json info
             ProcessMessage(socket);
-
-            socket.ClearData();
 
             //Start Event loop
             Networking.GetData(socket);
@@ -153,8 +166,23 @@ namespace TankWars
         {
             // Get string data from socket state 
             string JsonMessage = socket.GetData();
+
+            //This is a string that will contain all the complete data i.e. no partial Json strings at the end
+            string completeMessage;
+            //If the Json message does not end with newline, it means partial Json message at end so 
+            //we take the part that we can process
+            if (!JsonMessage.EndsWith("\n"))
+            {
+                //find the last instance of the newline and split the string at that point
+                int completedPoint = JsonMessage.LastIndexOf('\n');
+                completeMessage = JsonMessage.Substring(0, completedPoint);
+            }
+            //Message is complete and we can move forward as normal
+            else
+                completeMessage = JsonMessage;
+                
             // Separate objects within Json message using new line 
-            string[] parsedMessage = JsonMessage.Split('\n');
+            string[] parsedMessage = completeMessage.Split('\n');
             JObject curObj;
             JToken curToken;
 
@@ -213,8 +241,12 @@ namespace TankWars
             }
 
             //Send the player ID to view for drawing purposes
+            //Only sends once we receive tank data about oursleves
             if(tankInfoReceived)
                 PlayerIDGiven(playerID);
+
+            //Clear old data
+            socket.RemoveData(0, completeMessage.Length);
 
             //Notify the View to redraw the world
             UpdateWorld();
@@ -341,7 +373,7 @@ namespace TankWars
             ControlCommand cc = new ControlCommand(direction, fire, t.AimDirection);
 
             //Send to server
-            Networking.Send(server.TheSocket, JsonConvert.SerializeObject(cc));
+            Networking.Send(server.TheSocket, JsonConvert.SerializeObject(cc) + '\n');
 
             //Reset weapon states
             leftClickPressed = false;

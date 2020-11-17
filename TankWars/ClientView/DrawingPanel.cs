@@ -19,14 +19,37 @@ namespace TankWars
         private World World;
         private int selfTankID;
 
-        //Variables for images
-        Image wallSegment = Image.FromFile(@"..\..\..\Resources\Images\WallSprite.png");
-        Image background = Image.FromFile(@"..\..\..\Resources\Images\Background.png");
-        Image redTank = Image.FromFile(@"..\..\..\Resources\Images\RedTank.png");
-        Image yellowTank = Image.FromFile(@"..\..\..\Resources\Images\YellowTank.png");
-        Image blueTank = Image.FromFile(@"..\..\..\Resources\Images\BlueTank.png");
-        Image darkTank = Image.FromFile(@"..\..\..\Resources\Images\DarkTank.png");
-    
+        //Images for Tanks, walls, and background
+        readonly Image wallSegment = Image.FromFile(@"..\..\..\Resources\Images\WallSprite.png");
+        readonly Image background = Image.FromFile(@"..\..\..\Resources\Images\Background.png");
+        readonly Image redTank = Image.FromFile(@"..\..\..\Resources\Images\RedTank.png");
+        readonly Image yellowTank = Image.FromFile(@"..\..\..\Resources\Images\YellowTank.png");
+        readonly Image blueTank = Image.FromFile(@"..\..\..\Resources\Images\BlueTank.png");
+        readonly Image darkTank = Image.FromFile(@"..\..\..\Resources\Images\DarkTank.png");
+        readonly Image greenTank = Image.FromFile(@"..\..\..\Resources\Images\GreenTank.png");
+        readonly Image purpleTank = Image.FromFile(@"..\..\..\Resources\Images\PurpleTank.png");
+        readonly Image orangeTank = Image.FromFile(@"..\..\..\Resources\Images\OrangeTank.png");
+        readonly Image lightGreenTank = Image.FromFile(@"..\..\..\Resources\Images\LightGreenTank.png");
+
+        //Images for turret and projectiles
+        readonly Image blueTurret = Image.FromFile(@"..\..\..\Resources\Images\BlueTurret.png");
+        readonly Image darkTurret = Image.FromFile(@"..\..\..\Resources\Images\DarkTurret.png");
+        readonly Image lgTurret = Image.FromFile(@"..\..\..\Resources\Images\LightGreenTurret.png");
+        readonly Image greenTurret = Image.FromFile(@"..\..\..\Resources\Images\GreenTurret.png");
+        readonly Image redTurret = Image.FromFile(@"..\..\..\Resources\Images\RedTurret.png");
+        readonly Image orangeTurret = Image.FromFile(@"..\..\..\Resources\Images\OrangeTurret.png");
+        readonly Image yellowTurret = Image.FromFile(@"..\..\..\Resources\Images\YellowTurret.png");
+        readonly Image purpleTurret = Image.FromFile(@"..\..\..\Resources\Images\PurpleTurret.png");
+        readonly Image blueShot = Image.FromFile(@"..\..\..\Resources\Images\shot_blue.png");
+        readonly Image greyShot = Image.FromFile(@"..\..\..\Resources\Images\shot_grey.png");
+        readonly Image redShot = Image.FromFile(@"..\..\..\Resources\Images\shot-red.png");
+        readonly Image violetShot = Image.FromFile(@"..\..\..\Resources\Images\shot_violet.png");
+        readonly Image brownShot = Image.FromFile(@"..\..\..\Resources\Images\shot-brown.png");
+        readonly Image greenShot = Image.FromFile(@"..\..\..\Resources\Images\shot-green.png");
+        readonly Image yellowShot = Image.FromFile(@"..\..\..\Resources\Images\shot-yellow.png");
+        readonly Image powerup = Image.FromFile(@"..\..\..\Resources\Images\powerUp.png");
+
+
 
         //The constructor for the DrawingPanwl
         public DrawingPanel(World theWorld)
@@ -35,22 +58,48 @@ namespace TankWars
             World = theWorld;
         }
 
+        /// <summary>
+        /// Method that sets the drawing panel's world
+        /// </summary>
+        /// <param name="theWorld"></param>
         public void SetWorld(World theWorld)
         {
             World = theWorld;
         }
 
+        /// <summary>
+        /// Method that sets the Player ID number
+        /// </summary>
+        /// <param name="IDnum"></param>
         public void SetPlayerId(int IDnum)
         {
             selfTankID = IDnum;
         }
 
+        /// <summary>
+        /// Helper method to convert world coordinates to image coordinates
+        /// </summary>
+        /// <param name="size"></param>
+        /// <param name="w"></param>
+        /// <returns></returns>
         private static int WorldSpaceToImageSpace(int size, double w)
         {
             return (int)w + size / 2;
         }
 
+
         public delegate void ObjectDrawer(object o, PaintEventArgs e);
+
+        /// <summary>
+        /// Helper method that draws objects onto the drawing panel
+        /// </summary>
+        /// <param name="e"></param>
+        /// <param name="o"></param>
+        /// <param name="worldSize"></param>
+        /// <param name="worldX"></param>
+        /// <param name="worldY"></param>
+        /// <param name="angle"></param>
+        /// <param name="drawer"></param>
         private void DrawObjectWithTransform(PaintEventArgs e, object o, int worldSize, double worldX, double worldY, double angle, ObjectDrawer drawer)
         {
             //"push" the current transform
@@ -84,35 +133,42 @@ namespace TankWars
             // Get the tanks ID number and assign them a tank color based on that
             switch (tankID)
             {
-
+                //blue tank
                 case 0:
                     e.Graphics.DrawImage(blueTank, -30, -30);
                     DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
                     break;
+                //dark tank
                 case 1:
                     e.Graphics.DrawImage(darkTank, -30, -30);
                     DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
                     break;
+                //green tank
                 case 2:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\GreenTank.png"), -30, -30);
+                    e.Graphics.DrawImage(greenTank, -30, -30);
                     DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
                     break;
+                //light green tank
                 case 3:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\LightGreenTank.png"), -30, -30);
+                    e.Graphics.DrawImage(lightGreenTank, -30, -30);
                     DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
                     break;
+                //orange tank
                 case 4:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\OrangeTank.png"), -30, -30);
+                    e.Graphics.DrawImage(orangeTank, -30, -30);
                     DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
                     break;
+                //purple tank
                 case 5:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\PurpleTank.png"), -30, -30);
+                    e.Graphics.DrawImage(purpleTank, -30, -30);
                     DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
                     break;
+                //red tank
                 case 6:
                     e.Graphics.DrawImage(redTank, -30, -30);
                     DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
                     break;
+                //yellow tank
                 case 7:
                     e.Graphics.DrawImage(yellowTank, -30, -30);
                     DrawObjectWithTransform(e, t, World.Size, t.Location.GetX(), t.Location.GetY(), t.AimDirection.ToAngle(), turretDrawer);
@@ -141,40 +197,41 @@ namespace TankWars
             {
                 //blue turret
                 case 0:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\BlueTurret.png"), -25, -25);
+                    e.Graphics.DrawImage(blueTurret, 0, 0);
                     break;
 
                 //Dark turret
                 case 1:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\DarkTurret.png"), -25, -25);
+                    e.Graphics.DrawImage(darkTurret, -25, -25);
                     break;
 
                 //Green turret
                 case 2:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\GreenTurret.png"), -25, -25);
+                    e.Graphics.DrawImage(greenTurret, -25, -25);
                     break;
 
                 //Light Green turret
                 case 3:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\LightGreenTurret.png"), -25, -25);
+                    e.Graphics.DrawImage(lgTurret, -25, -25);
                     break;
+                //Orange turret
                 case 4:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\OrangeTurret.png"), -25, -25);
+                    e.Graphics.DrawImage(orangeTurret, -25, -25);
                     break;
 
                 //Purple turret
                 case 5:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\PurpleTurret.png"), -25, -25);
+                    e.Graphics.DrawImage(purpleTurret, -25, -25);
                     break;
 
                 //Red turret
                 case 6:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\RedTurret.png"), -25, -25);
+                    e.Graphics.DrawImage(redTurret, -25, -25);
                     break;
 
                 //Yellow turret
                 case 7:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\YellowTurret.png"), -25, -25);
+                    e.Graphics.DrawImage(yellowTurret, -25, -25);
                     break;
             }
         }
@@ -200,7 +257,7 @@ namespace TankWars
         {
             PowerUp p = o as PowerUp;
 
-            e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\WallSprite.png"), -8, -8);
+            e.Graphics.DrawImage(powerup, -8, -8);
         }
 
         /// <summary>
@@ -222,28 +279,28 @@ namespace TankWars
             {
 
                 case 0:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\shot_blue.png"), -15, -15);
+                    e.Graphics.DrawImage(blueShot, -15, -15);
                     break;
                 case 1:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\shot_grey.png"), -15, -15);
+                    e.Graphics.DrawImage(greyShot, -15, -15);
                     break;
                 case 2:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\shot-green.png"), -15, -15);
+                    e.Graphics.DrawImage(greenShot, -15, -15);
                     break;
                 case 3:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\shot-green.png"), -15, -15);
+                    e.Graphics.DrawImage(greenShot, -15, -15);
                     break;
                 case 4:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\shot-brown.png"), -15, -15);
+                    e.Graphics.DrawImage(brownShot, -15, -15);
                     break;
                 case 5:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\shot_violet.png"), -15, -15);
+                    e.Graphics.DrawImage(violetShot, -15, -15);
                     break;
                 case 6:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\shot-red.png"), -15, -15);
+                    e.Graphics.DrawImage(redShot, -15, -15);
                     break;
                 case 7:
-                    e.Graphics.DrawImage(Image.FromFile(@"..\..\..\Resources\Images\shot-yellow.png"), -15, -15);
+                    e.Graphics.DrawImage(yellowShot, -15, -15);
                     break;
             }
         }
@@ -268,6 +325,7 @@ namespace TankWars
             //Draw beam
             e.Graphics.DrawLine(whitePen, start, endx);
         }
+       
         // This method is invoked when the DrawingPanel needs to be re-drawn
         protected override void OnPaint(PaintEventArgs e)
         {
@@ -329,17 +387,17 @@ namespace TankWars
 
             lock (World.Walls)
             {
-                    //Draw walls
-                    foreach (Wall wall in World.Walls.Values)
-                    {
-                        //find the center of the wall
-                        double y = Math.Abs(wall.GetP1().GetY() - wall.GetP2().GetY());
-                        double x = Math.Abs(wall.GetP1().GetX() - wall.GetP2().GetX());
+                //Draw walls
+                foreach (Wall wall in World.Walls.Values)
+                {
+                    //find the center of the wall
+                    double y = Math.Abs(wall.GetP1().GetY() - wall.GetP2().GetY());
+                    double x = Math.Abs(wall.GetP1().GetX() - wall.GetP2().GetX());
 
-                        DrawObjectWithTransform(e, wall, World.Size, x, y, 0, WallDrawer);
-                    }
+                    DrawObjectWithTransform(e, wall, World.Size, x, y, 0, WallDrawer);
+                }
             }
-            
+
             //Let the base form do anything it needs to move on
             base.OnPaint(e);
         }
