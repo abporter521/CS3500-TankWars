@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
+using System.Diagnostics;
 
 namespace TankWars
 {
@@ -54,6 +55,7 @@ namespace TankWars
         private Pen yellowPen = new Pen(Color.Yellow);
         private Pen greenPen = new Pen(Color.LawnGreen);
 
+        private Dictionary<int, Beam> beams = new Dictionary<int, Beam>();
 
         //The constructor for the DrawingPanwl
         public DrawingPanel(World theWorld)
@@ -89,6 +91,11 @@ namespace TankWars
         private static int WorldSpaceToImageSpace(int size, double w)
         {
             return (int)w + size / 2;
+        }
+
+        public void PaintBeam(Beam b)
+        {
+            beams.Add(b.GetID(), b);
         }
 
 
@@ -358,11 +365,12 @@ namespace TankWars
             e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
             //Create a pen to draw a whiteline
-            Pen whitePen = new Pen(Color.White, 5);
+            Pen whitePen = new Pen(Color.White, 2);
 
             //Create points for beam attack
-            Point endx = new Point((int)(b.Origin.GetX() + Math.Cos(b.Direction.ToAngle()) * 10000), (int)(b.Origin.GetY() + Math.Sin(b.Direction.ToAngle()) * 10000));
-            Point start = new Point((int)b.Origin.GetX(), (int)b.Origin.GetY());
+            Point endx = new Point(0, -1000);
+            Point start = new Point(0, 0);
+
             //Draw beam
             e.Graphics.DrawLine(whitePen, start, endx);
         }
@@ -384,19 +392,21 @@ namespace TankWars
                     //Draw explosion
                     break;
                 case 1:
-                    healthbar = new Rectangle((int)t.Location.GetX(), (int)t.Location.GetY(), 5, 3);
-                    e.Graphics.DrawRectangle(redPen, healthbar);
+                    healthbar = new Rectangle(-15, -40, 15, 5);
+                    e.Graphics.FillRectangle(redPen.Brush, healthbar);
                     break;
                 case 2:
-                    healthbar = new Rectangle((int)t.Location.GetX(), (int)t.Location.GetY(), 10, 3);
-                    e.Graphics.DrawRectangle(yellowPen, healthbar);
+                    healthbar = new Rectangle(-15, -40, 30, 5);
+                    e.Graphics.FillRectangle(yellowPen.Brush, healthbar);
                     break;
                 case 3:
-                    healthbar = new Rectangle((int)t.Location.GetX(), (int)t.Location.GetY(), 20, 3);
-                    e.Graphics.DrawRectangle(greenPen, healthbar);
+                    healthbar = new Rectangle(-23, -40, 45, 5);
+                    e.Graphics.FillRectangle(greenPen.Brush, healthbar);
                     break;
             }
         }
+
+
 
         // This method is invoked when the DrawingPanel needs to be re-drawn
         protected override void OnPaint(PaintEventArgs e)
@@ -405,17 +415,20 @@ namespace TankWars
             if (World == null)
                 return;
 
-            double playerX = World.Tanks[selfTankID].Location.GetX();// (the player's world-space X coordinate)
-            double playerY = World.Tanks[selfTankID].Location.GetY();//... (the player's world-space Y coordinate)
+            if (World.Tanks.ContainsKey(selfTankID))
+            {
+                double playerX = World.Tanks[selfTankID].Location.GetX();// (the player's world-space X coordinate)
+                double playerY = World.Tanks[selfTankID].Location.GetY();//... (the player's world-space Y coordinate)
 
-            // calculate view/world size ratio
-            double ratio = (double)850 / (double)World.Size;
-            int halfSizeScaled = (int)(World.Size / 2.0 * ratio);
+                // calculate view/world size ratio
+                double ratio = (double)850 / (double)World.Size;
+                int halfSizeScaled = (int)(World.Size / 2.0 * ratio);
 
-            double inverseTranslateX = -WorldSpaceToImageSpace(World.Size, playerX) + halfSizeScaled;
-            double inverseTranslateY = -WorldSpaceToImageSpace(World.Size, playerY) + halfSizeScaled;
+                double inverseTranslateX = -WorldSpaceToImageSpace(World.Size, playerX) + halfSizeScaled;
+                double inverseTranslateY = -WorldSpaceToImageSpace(World.Size, playerY) + halfSizeScaled;
 
-            e.Graphics.TranslateTransform((float)inverseTranslateX, (float)inverseTranslateY);
+                e.Graphics.TranslateTransform((float)inverseTranslateX, (float)inverseTranslateY);
+            }
 
             //Draw the world
             Rectangle rect = new Rectangle(0, 0, World.Size, World.Size);
@@ -451,15 +464,6 @@ namespace TankWars
                 }
             }
 
-            lock (World.Beams)
-            {
-                //Draw beams
-                foreach (Beam beam in World.Beams.Values)
-                {
-                    DrawObjectWithTransform(e, beam, World.Size, beam.Origin.GetX(), beam.Origin.GetY(), beam.Direction.ToAngle(), BeamDrawer);
-                }
-            }
-
             lock (World.Walls)
             {
                 //Draw walls
@@ -472,9 +476,31 @@ namespace TankWars
                     DrawObjectWithTransform(e, wall, World.Size, 0, 0, 0, WallDrawer);
                 }
             }
+            lock (World.Beams)
+            {
+                if (World.Beams.Count > 0)
+                {
+                    //Start the stopwatch
+                    //frameWatch.Start();
+                    //Draw beams
+                    foreach (Beam beam in World.Beams.Values)
+                    {
+                        beam.Direction.Normalize();
+                        DrawObjectWithTransform(e, beam, World.Size, beam.Origin.GetX(), beam.Origin.GetY(), beam.Direction.ToAngle(), BeamDrawer);
+                    }
+                    //Restart the stopwatch
+                    //timeSum += frameWatch.ElapsedMilliseconds;
+                    //frameWatch.Restart();
+                }
+            }
+
+
+
 
             //Let the base form do anything it needs to move on
             base.OnPaint(e);
+
+
         }
     }
 }

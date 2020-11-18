@@ -4,9 +4,12 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Net.WebSockets;
 using System.Threading;
+using System.Windows.Forms;
 using NetworkUtil;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using Timer = System.Threading.Timer;
+
 
 namespace TankWars
 {
@@ -56,6 +59,8 @@ namespace TankWars
 
         //Contains information of the game world
         private World theWorld;
+
+        private Timer beamTimer;
 
         /// <summary>
         /// Returns the world object for the view
@@ -180,7 +185,7 @@ namespace TankWars
             //Message is complete and we can move forward as normal
             else
                 completeMessage = JsonMessage;
-                
+
             // Separate objects within Json message using new line 
             string[] parsedMessage = completeMessage.Split('\n');
             JObject curObj;
@@ -242,7 +247,7 @@ namespace TankWars
 
             //Send the player ID to view for drawing purposes
             //Only sends once we receive tank data about oursleves
-            if(tankInfoReceived)
+            if (tankInfoReceived)
                 PlayerIDGiven(playerID);
 
             //Clear old data
@@ -267,14 +272,28 @@ namespace TankWars
             SendTankUpdate(selfTank);
         }
 
-        public void TurretMouseAngle(Point mousePos)
+        /// <summary>
+        /// Method that moves tank turret 
+        /// </summary>
+        /// <param name="mousePos"></param>
+        public void TurretMouseAngle(MouseEventArgs mousePos)
         {
-            double x = mousePos.X - (selfTank.Location.GetX() + theWorld.Size / 2);
-            double y = mousePos.Y - (selfTank.Location.GetY() + theWorld.Size / 2);
-            Vector2D newAim = new Vector2D(x, y);
+            //Calculate the vector between mouse position and tank
+            //425 is half of the view screen size.  Since tank is centered on the panel, that
+            //describes  tank location as a fixed point
+            double mouseWorldXPosition = mousePos.X - 425;
+            double mouseWorldYPosition = mousePos.Y - 425;
+            
+            //Get the vector points between mouse and tank location
+            Vector2D newAim = new Vector2D(mouseWorldXPosition, mouseWorldYPosition);
+
+            //Normalize vector and set tank aim direction to this new vector
             newAim.Normalize();
             selfTank.AimDirection = newAim;
-           // UpdateWorld();
+
+            //Update the tank
+            SendTankUpdate(selfTank);
+            // UpdateWorld();
 
         }
 
@@ -364,7 +383,9 @@ namespace TankWars
             if (leftClickPressed)
                 fire = "main";
             else if (rightClickPressed)
+            {
                 fire = "alt";
+            }
             else
                 fire = "none";
 
@@ -382,6 +403,16 @@ namespace TankWars
 
             //Redraw the world
             UpdateWorld();
+        }
+
+        //Callback to remove beam from world
+        public void RemoveBeam(object x)
+        {
+            Beam b = x as Beam;
+            lock (theWorld.Beams)
+            {
+                theWorld.Beams.Remove(b.GetID());
+            }
         }
 
         /// <summary>
@@ -472,16 +503,9 @@ namespace TankWars
                     // Check if the world contains the object already
                     lock (theWorld.Beams)
                     {
-                        if (theWorld.Beams.ContainsKey(curBeam.GetID()))
-                        {
-                            // Remove the Beam so that it can be updated
-                            theWorld.Beams.Remove(curBeam.GetID());
-                        }
-
-                        //Check if beam is dead
-
-                        // Re-add the Beam back into the world
+                        // add the Beam back into the world
                         theWorld.Beams.Add(curBeam.GetID(), curBeam);
+                        beamTimer = new Timer(new TimerCallback(RemoveBeam), curBeam, 500, -1);
                     }
                     break;
             }

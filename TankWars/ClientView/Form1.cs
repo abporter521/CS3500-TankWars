@@ -30,7 +30,6 @@ namespace TankWars
         private DrawingPanel panel;
 
         //These are our client window comoponents
-        Button connect;
         TextBox IPName;
         TextBox playerName;
 
@@ -52,7 +51,6 @@ namespace TankWars
             ClientSize = new Size(viewSize, viewSize + menuSize);
 
             //Save our boxes to variables
-            connect = connectButton;
             IPName = hostText;
             playerName = playerText;
 
@@ -106,6 +104,7 @@ namespace TankWars
         /// <param name="e"></param>
         private void HandleKeyDown(object sender, KeyEventArgs e)
         {
+            //handle key directions
             if (e.KeyCode == Keys.S)
                 theController.Movement("down");
             if (e.KeyCode == Keys.W)
@@ -156,28 +155,27 @@ namespace TankWars
         {
             if (worldExists)
             {
-                //Set up the mouse handler
-                Point mouseLocation = DrawingPanel.MousePosition;
-                mouseLocation.X = (theWorld.Size + mouseLocation.X)/ 2;
-                mouseLocation.Y = (theWorld.Size + mouseLocation.Y) / 2;
-                theController.TurretMouseAngle(mouseLocation);
+                theController.TurretMouseAngle(e);
             }
         }
 
         private void connectButton_Click(object sender, EventArgs e)
         {
-            playerName.Enabled = false;
-            connectButton.Enabled = false;
-            IPName.Enabled = false;
-            //Enable the global form to capture key presses
-            KeyPreview = true;
-
             //Make sure user enters a name
             if (playerName.Text == "")
             {
                 DisplayErrorMessage("Please enter player name");
                 return;
             }
+
+            //disable buttons after connecting
+            playerName.Enabled = false;
+            connectButton.Enabled = false;
+            IPName.Enabled = false;
+            //Enable the global form to capture key presses
+            KeyPreview = true;
+
+            
 
             //Connect with Server
             theController.Connect(IPName.Text, playerName.Text);
