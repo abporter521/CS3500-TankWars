@@ -266,7 +266,7 @@ namespace TankWars
                 leftClickPressed = true;
             if (whichSide == "right")
                 rightClickPressed = true;
-            
+
             //Update server
             SendTankUpdate(selfTank);
         }
@@ -284,7 +284,7 @@ namespace TankWars
             //describes  tank location as a fixed point
             double mouseWorldXPosition = mousePos.X - 425;
             double mouseWorldYPosition = mousePos.Y - 425;
-            
+
             //Get the vector points between mouse and tank location
             Vector2D newAim = new Vector2D(mouseWorldXPosition, mouseWorldYPosition);
 
@@ -295,6 +295,14 @@ namespace TankWars
             //Update the tank
             SendTankUpdate(selfTank);
         }
+
+        // To Fix Idea dump: Since there can be multiple keys being pressed at a time, we need to incorporate
+        // a data structure that is able to track the order at which each key has been pressed. Once these key(s) 
+        // are in the data structure we need to continue to execute the key that was first added until its key has 
+        // been released. Once this key has been released it will be removed from the data structure and the next most 
+        // recent key will start to be executed, assuming it has not been released yet. This will also fix our jitter issue
+        // and slow movement on the tank as we will only be sending one movement a frame whereas now we have the potential to send
+        // multiple a frame which is creating the slow moving laggy tank that we have right now.
 
         /// <summary>
         /// This method is called when a keyevent is registered
@@ -310,39 +318,40 @@ namespace TankWars
                 //Set left to true and others to false
                 case "left":
                     leftKeyPressed = true;
-                    rightKeyPressed = false;
-                    upKeyPressed = false;
-                    downKeyPressed = false;
                     break;
 
                 //Set Right to true and others to false
                 case "right":
                     rightKeyPressed = true;
-                    leftKeyPressed = false;
-                    upKeyPressed = false;
-                    downKeyPressed = false;
                     break;
 
                 //Set Up to true and others to false
                 case "up":
                     upKeyPressed = true;
-                    downKeyPressed = false;
-                    leftKeyPressed = false;
-                    rightKeyPressed = false;
                     break;
 
                 //Set Down to true and other to false
                 case "down":
                     downKeyPressed = true;
-                    upKeyPressed = false;
+                    break;
+                case "stopLeft":
                     leftKeyPressed = false;
+                    break;
+                case "stopRight":
                     rightKeyPressed = false;
                     break;
+                case "stopUp":
+                    upKeyPressed = false;
+                    break;
+                case "stopDown":
+                    downKeyPressed = false;
+                    break;
+
 
             }
 
             //Send tank update
-            SendTankUpdate(selfTank);
+            //   SendTankUpdate(selfTank);
         }
 
         /// <summary>
@@ -357,7 +366,7 @@ namespace TankWars
             rightKeyPressed = false;
 
             //Send tank update
-            SendTankUpdate(selfTank);
+            //    SendTankUpdate(selfTank);
         }
 
         /// <summary>
@@ -405,7 +414,7 @@ namespace TankWars
             rightClickPressed = false;
 
             //Redraw the world
-            UpdateWorld();
+            //UpdateWorld();
         }
 
         //Callback from timer to remove beam from world
