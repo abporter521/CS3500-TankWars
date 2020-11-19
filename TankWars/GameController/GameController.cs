@@ -13,10 +13,6 @@ using Timer = System.Threading.Timer;
 
 namespace TankWars
 {
-    //TODO:  KEY HANDLERS
-    //       SET UP EVENTS FOR COMMUNICATION WITH VIEW
-    //       ADD LOCKS TO WORLD UPDATE METHOD
-
     /// <summary>
     /// This is our game controller class.  This class will communicate with the 
     /// game server on behalf of the view.  This controller has methods 
@@ -60,6 +56,7 @@ namespace TankWars
         //Contains information of the game world
         private World theWorld;
 
+        //Timer to make sure beam drawing does not stay indefinetely 
         private Timer beamTimer;
 
         /// <summary>
@@ -83,7 +80,8 @@ namespace TankWars
         }
 
         /// <summary>
-        /// 
+        /// Once server connects, run this part of the handshake which sets server
+        /// as a member variable representing the connection to the host
         /// </summary>
         /// <param name="ss"></param> Socket state to represent the server connection
         private void OnConnect(SocketState ss)
@@ -268,12 +266,15 @@ namespace TankWars
                 leftClickPressed = true;
             if (whichSide == "right")
                 rightClickPressed = true;
+            
             //Update server
             SendTankUpdate(selfTank);
         }
 
         /// <summary>
-        /// Method that moves tank turret 
+        /// This method receives the mouse position and 
+        /// translates it to the tank's turret movement.
+        /// The turret will always point in the direction of the mouse
         /// </summary>
         /// <param name="mousePos"></param>
         public void TurretMouseAngle(MouseEventArgs mousePos)
@@ -293,8 +294,6 @@ namespace TankWars
 
             //Update the tank
             SendTankUpdate(selfTank);
-            // UpdateWorld();
-
         }
 
         /// <summary>
@@ -315,6 +314,7 @@ namespace TankWars
                     upKeyPressed = false;
                     downKeyPressed = false;
                     break;
+
                 //Set Right to true and others to false
                 case "right":
                     rightKeyPressed = true;
@@ -330,6 +330,7 @@ namespace TankWars
                     leftKeyPressed = false;
                     rightKeyPressed = false;
                     break;
+
                 //Set Down to true and other to false
                 case "down":
                     downKeyPressed = true;
@@ -345,10 +346,11 @@ namespace TankWars
         }
 
         /// <summary>
-        /// Method when the tank registers no key pressed
+        /// Method when the tank registers key up, meaning no movement
         /// </summary>
         public void MovementStopped()
         {
+            //Set all flags to false
             downKeyPressed = false;
             upKeyPressed = false;
             leftKeyPressed = false;
@@ -391,7 +393,8 @@ namespace TankWars
 
             // Normalize the aim direction vector
             t.AimDirection.Normalize();
-            //Create the control command object
+
+            //Create the control command object with direction, weapon, and turret direction
             ControlCommand cc = new ControlCommand(direction, fire, t.AimDirection);
 
             //Send to server
@@ -405,7 +408,7 @@ namespace TankWars
             UpdateWorld();
         }
 
-        //Callback to remove beam from world
+        //Callback from timer to remove beam from world
         public void RemoveBeam(object x)
         {
             Beam b = x as Beam;
@@ -420,7 +423,7 @@ namespace TankWars
         /// updates the models within the world.
         /// </summary>
         /// <param name="JsonMessage">Message passed from ProccessMessage</param>
-        /// <param name="objectType">Int number representing the objects type</param>
+        /// <param name="objectType">Int number representing the object's type</param>
         private void UpdateWorldModel(string JsonMessage, int objectType)
         {
             // Enter switch case based on what object has identified as and 
@@ -435,7 +438,6 @@ namespace TankWars
                         selfTank = curTank;
                     lock (theWorld.Tanks)
                     {
-
                         // Check if the world contains the object already
                         if (theWorld.Tanks.ContainsKey(curTank.GetID()))
                         {
@@ -461,7 +463,7 @@ namespace TankWars
                     }
                     break;
                 case 2:
-                    // Convert Json message into Wall object
+                    // Convert Json message into Projectile object
                     Projectile curProjectile = JsonConvert.DeserializeObject<Projectile>(JsonMessage);
                     // Check if the world contains the object already
                     lock (theWorld.Projectiles)
@@ -490,6 +492,7 @@ namespace TankWars
                             // Remove the PowerUp so that it can be updated
                             theWorld.PowerUps.Remove(curpowerUp.getID());
                         }
+                        //Check if the powerup was collected or not
                         if (!curpowerUp.collected)
                         {
                             // Re-add the PowerUp back into the world
@@ -503,8 +506,9 @@ namespace TankWars
                     // Check if the world contains the object already
                     lock (theWorld.Beams)
                     {
-                        // add the Beam back into the world
+                        // add the Beam into the world
                         theWorld.Beams.Add(curBeam.GetID(), curBeam);
+                        //Trigger a timer with the beam so that it is removed from the world after a certain time
                         beamTimer = new Timer(new TimerCallback(RemoveBeam), curBeam, 500, -1);
                     }
                     break;

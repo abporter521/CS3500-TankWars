@@ -31,9 +31,9 @@ namespace TankWars
         /// <summary>
         /// Constructor
         /// </summary>
-        /// <param name="upDownLeftRightNone"></param>
-        /// <param name="noneMainAlt"></param>
-        /// <param name="fireDirection"></param>
+        /// <param name="upDownLeftRightNone"></param> direction if any of the tank
+        /// <param name="noneMainAlt"></param>  which weapon was fired if any
+        /// <param name="fireDirection"></param> Where the turret is directed
         public ControlCommand(string upDownLeftRightNone, string noneMainAlt, Vector2D fireDirection)
         {
             moving = upDownLeftRightNone;

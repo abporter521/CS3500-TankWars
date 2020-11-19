@@ -57,8 +57,11 @@ namespace TankWars
             // Set up key and mouse handlers
             this.KeyDown += HandleKeyDown;
             this.KeyUp += HandleKeyUp;
-            //Set up handlers for controls
-            
+
+            //Allow enter button to connect to server
+            AcceptButton = connectButton;
+
+            //Set up handlers for controls            
             panel.MouseMove += OnMouseMove;
             panel.MouseClick += HandleMouseClick;
             theController.PlayerIDGiven += InitializeWithID;
@@ -81,9 +84,12 @@ namespace TankWars
         /// <param name="info"></param>
         private void InitializeWithID(int info)
         {
+            //Set up Drawing Panel with the created world and player ID
             panel.SetWorld(theController.GetWorld());
             panel.SetPlayerId(info);
             theWorld = theController.GetWorld();
+
+            //Set boolean to true so that other events are activated
             worldExists = true;
         }
 
@@ -114,8 +120,6 @@ namespace TankWars
             if (e.KeyCode == Keys.D)
                 theController.Movement("right");
 
-            
-
             // Prevent other key handlers from running
             e.SuppressKeyPress = true;
             e.Handled = true;
@@ -129,7 +133,8 @@ namespace TankWars
         /// <param name="e"></param>
         private void HandleKeyUp(object sender, KeyEventArgs e)
         {
-                theController.MovementStopped();
+            //Tank movement stopped
+            theController.MovementStopped();
         }
 
         /// <summary>
@@ -139,10 +144,14 @@ namespace TankWars
         /// <param name="e"></param>
         private void HandleMouseClick(object sender, MouseEventArgs e)
         {
+            //Makes sure game is loaded before registering mouse clicks
             if (worldExists)
             {
+                //If normal weapon was used
                 if (e.Button == MouseButtons.Left)
                     theController.WeaponFire("left");
+
+                //If alternate weapon was used
                 if (e.Button == MouseButtons.Right)
                 {
                     theController.WeaponFire("right");
@@ -153,6 +162,7 @@ namespace TankWars
         //Tracks mouse movement to move turret
         private void OnMouseMove(object sender, MouseEventArgs e)
         {
+            //If world exists, send mouse movement to controller
             if (worldExists)
             {
                 theController.TurretMouseAngle(e);
@@ -168,14 +178,19 @@ namespace TankWars
                 return;
             }
 
+            //Make sure server name is entered
+            if (hostText.Text == "")
+            {
+                DisplayErrorMessage("Please enter server name");
+                return;
+            }
+
             //disable buttons after connecting
             playerName.Enabled = false;
             connectButton.Enabled = false;
             IPName.Enabled = false;
             //Enable the global form to capture key presses
             KeyPreview = true;
-
-            
 
             //Connect with Server
             theController.Connect(IPName.Text, playerName.Text);

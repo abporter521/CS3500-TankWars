@@ -11,9 +11,9 @@ using System.Diagnostics;
 
 namespace TankWars
 {
-    //TODO: CREATE COMMENTS
-    //      CREATE OTHER METHODS FOR DRAWING OBJECTS
-    //      ADD LOCKS ON DRAW
+  /// <summary>
+  /// 
+  /// </summary>
     public class DrawingPanel : Panel
     {
         //Variable containing the current world of the game
@@ -469,9 +469,9 @@ namespace TankWars
                 //Draw walls
                 foreach (Wall wall in World.Walls.Values)
                 {
-                    //find the direction of the wall
-                    double y = Math.Abs(wall.GetP1().GetY() - wall.GetP2().GetY());
-                    double x = Math.Abs(wall.GetP1().GetX() - wall.GetP2().GetX());
+                    ////find the direction of the wall
+                    //double y = Math.Abs(wall.GetP1().GetY() - wall.GetP2().GetY());
+                    //double x = Math.Abs(wall.GetP1().GetX() - wall.GetP2().GetX());
 
                     DrawObjectWithTransform(e, wall, World.Size, 0, 0, 0, WallDrawer);
                 }
