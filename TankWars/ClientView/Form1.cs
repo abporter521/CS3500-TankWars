@@ -47,6 +47,7 @@ namespace TankWars
             panel.Location = new Point(0, menuSize);
             panel.Size = new Size(viewSize, viewSize);
             this.Controls.Add(panel);
+            
             // Set the window size
             ClientSize = new Size(viewSize, viewSize + menuSize);
 
@@ -123,6 +124,10 @@ namespace TankWars
             // Prevent other key handlers from running
             e.SuppressKeyPress = true;
             e.Handled = true;
+
+            //Closes the form with escape key
+            if (e.KeyCode == Keys.Escape)
+                this.Close();
         }
 
 
@@ -134,7 +139,15 @@ namespace TankWars
         private void HandleKeyUp(object sender, KeyEventArgs e)
         {
             //Tank movement stopped
-            theController.MovementStopped();
+            //handle key directions
+            if (e.KeyCode == Keys.S)
+                theController.MovementStopped("down");
+            if (e.KeyCode == Keys.W)
+                theController.MovementStopped("up");
+            if (e.KeyCode == Keys.A)
+                theController.MovementStopped("left");
+            if (e.KeyCode == Keys.D)
+                theController.MovementStopped("right");
         }
 
         /// <summary>

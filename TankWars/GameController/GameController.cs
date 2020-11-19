@@ -246,13 +246,17 @@ namespace TankWars
             //Send the player ID to view for drawing purposes
             //Only sends once we receive tank data about oursleves
             if (tankInfoReceived)
+            {
                 PlayerIDGiven(playerID);
+                SendTankUpdate(selfTank);
+            }
 
             //Clear old data
             socket.RemoveData(0, completeMessage.Length);
 
             //Notify the View to redraw the world
             UpdateWorld();
+
         }
 
         /// <summary>
@@ -334,41 +338,35 @@ namespace TankWars
                 case "down":
                     downKeyPressed = true;
                     break;
-                case "stopLeft":
-                    leftKeyPressed = false;
-                    break;
-                case "stopRight":
-                    rightKeyPressed = false;
-                    break;
-                case "stopUp":
-                    upKeyPressed = false;
-                    break;
-                case "stopDown":
-                    downKeyPressed = false;
-                    break;
-
-
             }
-
             //Send tank update
-            //   SendTankUpdate(selfTank);
+            SendTankUpdate(selfTank);
         }
 
         /// <summary>
         /// Method when the tank registers key up, meaning no movement
         /// </summary>
-        public void MovementStopped()
+        public void MovementStopped(string stopDir)
         {
-            //Set all flags to false
-            downKeyPressed = false;
-            upKeyPressed = false;
-            leftKeyPressed = false;
-            rightKeyPressed = false;
-
+            switch (stopDir)
+            {
+                //Set flags to false
+                case "left":
+                    leftKeyPressed = false;
+                    break;
+                case "right":
+                    rightKeyPressed = false;
+                    break;
+                case "up":
+                    upKeyPressed = false;
+                    break;
+                case "down":
+                    downKeyPressed = false;
+                    break;
+            }
             //Send tank update
-            //    SendTankUpdate(selfTank);
+            SendTankUpdate(selfTank);
         }
-
         /// <summary>
         /// Method that sends the tanks updated stats to the server
         /// </summary>
@@ -379,12 +377,12 @@ namespace TankWars
             string fire;
 
             //Check movement state
-            if (upKeyPressed)
-                direction = "up";
+            if (leftKeyPressed)
+                direction = "left";
             else if (downKeyPressed)
                 direction = "down";
-            else if (leftKeyPressed)
-                direction = "left";
+            else if (upKeyPressed)
+                direction = "up";
             else if (rightKeyPressed)
                 direction = "right";
             else
@@ -394,9 +392,7 @@ namespace TankWars
             if (leftClickPressed)
                 fire = "main";
             else if (rightClickPressed)
-            {
                 fire = "alt";
-            }
             else
                 fire = "none";
 
@@ -412,9 +408,6 @@ namespace TankWars
             //Reset weapon states
             leftClickPressed = false;
             rightClickPressed = false;
-
-            //Redraw the world
-            //UpdateWorld();
         }
 
         //Callback from timer to remove beam from world

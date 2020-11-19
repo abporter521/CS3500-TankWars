@@ -19,11 +19,11 @@ namespace TankWars
         //String representing whether player wants to move or not and direction
         [JsonProperty]
         private string moving;
-        
+
         //String representing which weapon if any, the player used
         [JsonProperty]
         private string fire;
-        
+
         //Direction the player is aiming
         [JsonProperty]
         private Vector2D tdir;
@@ -40,6 +40,5 @@ namespace TankWars
             fire = noneMainAlt;
             tdir = fireDirection;
         }
-
     }
 }
