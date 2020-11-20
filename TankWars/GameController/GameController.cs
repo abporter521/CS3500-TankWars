@@ -59,6 +59,9 @@ namespace TankWars
         //Timer to make sure beam drawing does not stay indefinetely 
         private Timer beamTimer;
 
+        //
+        Stack<string> movementOrder = new Stack<string>();
+
         /// <summary>
         /// Returns the world object for the view
         /// </summary>
@@ -317,27 +320,35 @@ namespace TankWars
         public void Movement(string keyPressed)
         {
             //Sets the boolean when appropriate key is pressed
-            switch (keyPressed)
+            lock (movementOrder)
             {
-                //Set left to true and others to false
-                case "left":
-                    leftKeyPressed = true;
-                    break;
+                switch (keyPressed)
+                {
 
-                //Set Right to true and others to false
-                case "right":
-                    rightKeyPressed = true;
-                    break;
+                    //Set left to true and others to false
+                    case "left":
+                        leftKeyPressed = true;
+                        movementOrder.Push("left");
+                        break;
 
-                //Set Up to true and others to false
-                case "up":
-                    upKeyPressed = true;
-                    break;
+                    //Set Right to true and others to false
+                    case "right":
+                        rightKeyPressed = true;
+                        movementOrder.Push("right");
+                        break;
 
-                //Set Down to true and other to false
-                case "down":
-                    downKeyPressed = true;
-                    break;
+                    //Set Up to true and others to false
+                    case "up":
+                        upKeyPressed = true;
+                        movementOrder.Push("up");
+                        break;
+
+                    //Set Down to true and other to false
+                    case "down":
+                        downKeyPressed = true;
+                        movementOrder.Push("down");
+                        break;
+                }
             }
             //Send tank update
             SendTankUpdate(selfTank);
@@ -373,11 +384,57 @@ namespace TankWars
         private void SendTankUpdate(Tank t)
         {
             //Set up parameters for Control command object
-            string direction;
+            string direction = "none";
             string fire;
 
+
+            //string curMove = movementOrder.Peek();
+
+            //switch (curMove)
+            //{
+            //    case "left":
+            //        if (leftKeyPressed)
+            //        {
+            //            direction = curMove;
+            //            break;
+            //        }
+            //        else
+            //            movementOrder.Pop();
+            //        break;
+            //    case "right":
+            //        if (rightKeyPressed)
+            //        {
+            //            direction = curMove;
+            //            break;
+            //        }
+            //        else
+            //            movementOrder.Pop();
+            //        break;
+            //    case "down":
+            //        if (downKeyPressed)
+            //        {
+            //            direction = curMove;
+            //            break;
+            //        }
+            //        else
+            //            movementOrder.Pop();
+            //        break;
+            //    case "up":
+            //        if (upKeyPressed)
+            //        {
+            //            direction = curMove;
+            //            break;
+            //        }
+            //        else
+            //            movementOrder.Pop();
+            //        break;
+            //}
+            //if (movementOrder.Count == 0)
+            //    direction = "none";
+
+
             //Check movement state
-            if (leftKeyPressed)
+            if (leftKeyPressed || (leftKeyPressed && downKeyPressed))
                 direction = "left";
             else if (downKeyPressed)
                 direction = "down";
@@ -447,10 +504,15 @@ namespace TankWars
                             theWorld.Tanks.Remove(curTank.GetID());
                         }
                         //Check if tank has died
-                        if (!curTank.HasDied)
+                        if (curTank.HealthLevel > 0)
                         {
+                            curTank.HasDied = false;
                             // Re-add the tank back into the world
                             theWorld.Tanks.Add(curTank.GetID(), curTank);
+                        }
+                        else
+                        {
+                            curTank.HasDied = true;
                         }
                     }
                     break;

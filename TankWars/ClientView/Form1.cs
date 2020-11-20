@@ -69,6 +69,8 @@ namespace TankWars
             theController.Error += DisplayErrorMessage;
         }
 
+       
+
         /// <summary>
         /// This handler method displays a message if one occurrs to the user
         /// </summary>
@@ -130,6 +132,7 @@ namespace TankWars
                 this.Close();
         }
 
+       
 
         /// <summary>
         /// Key up handler

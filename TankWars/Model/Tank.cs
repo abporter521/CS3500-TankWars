@@ -80,6 +80,12 @@ namespace TankWars
             return name;
         }
 
+        //Get method for Score
+        public int GetScore()
+        {
+            return score;
+        }
+
         //Get Set property related to location of projectile
         public Vector2D Location
         {

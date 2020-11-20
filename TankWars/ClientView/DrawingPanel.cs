@@ -12,9 +12,9 @@ using System.IO;
 
 namespace TankWars
 {
-  /// <summary>
-  /// 
-  /// </summary>
+    /// <summary>
+    /// 
+    /// </summary>
     public class DrawingPanel : Panel
     {
         //Variable containing the current world of the game
@@ -367,7 +367,7 @@ namespace TankWars
         {
             Beam b = o as Beam;
 
-            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;           
+            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
             //Create points for beam attack
             Point endx = new Point(0, -1000);
@@ -387,27 +387,11 @@ namespace TankWars
             Tank t = o as Tank;
             int health = t.HealthLevel;
             Rectangle healthbar;
-            int explosionCount = 0;
-            Random rand = new Random(10);
-            double randX;
-            double randY;
-            Point randPoint;
 
             //Switch for health level bar
             switch (health)
             {
-                case 0:
-                    lock (World.Tanks)
-                    {
-                        World.Tanks.Remove(t.GetID());
-                        // add explosion sprite
-                        while(explosionCount < 15)
-                        {
-                           randPoint =  new Point((int) (t.Location.GetX() - (rand.NextDouble() * 10)),(int) (t.Location.GetY() - (rand.NextDouble() * 10)));
-                            e.Graphics.DrawImage(redShot, randPoint);
-                        }
-                        break;
-                    }
+
                 case 1:
                     healthbar = new Rectangle(-15, -40, 15, 5);
                     e.Graphics.FillRectangle(redPen.Brush, healthbar);
@@ -417,6 +401,7 @@ namespace TankWars
                     e.Graphics.FillRectangle(yellowPen.Brush, healthbar);
                     break;
                 case 3:
+                    //t.HasDied = false;
                     healthbar = new Rectangle(-23, -40, 45, 5);
                     e.Graphics.FillRectangle(greenPen.Brush, healthbar);
                     break;
@@ -427,7 +412,7 @@ namespace TankWars
         {
             Tank t = o as Tank;
             byte[] imageBytes = Encoding.Unicode.GetBytes(t.GetName());
-            e.Graphics.DrawString(t.GetName(), playerStyle, whitePen.Brush, -23, 40);
+            e.Graphics.DrawString(t.GetName() + ": " + t.GetScore().ToString(), playerStyle, whitePen.Brush, -25, 25);
         }
 
         // This method is invoked when the DrawingPanel needs to be re-drawn
@@ -461,11 +446,29 @@ namespace TankWars
                 // Draw the players
                 foreach (Tank tank in World.Tanks.Values)
                 {
-                    DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), tank.Orientation.ToAngle(), DrawTank);
-                    DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), tank.AimDirection.ToAngle(), turretDrawer);
-                    DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), 0, HealthDrawer);
-                    DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), 0, NameDrawer);
+                    //Do not draw the tank if it has died
+                    if (!tank.HasDied)
+                    {
+                        DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), tank.Orientation.ToAngle(), DrawTank);
+                        DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), tank.AimDirection.ToAngle(), turretDrawer);
+                        DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), 0, NameDrawer);
 
+                        //Draw the health level still because this includes the death explosion
+                        DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), 0, HealthDrawer);
+                    }
+                    else
+                    {
+                        Random rand = new Random();
+                        int explosionCount = 0;
+                        // add explosion sprite
+                        while (explosionCount < 15)
+                        {
+                            Point randPoint = new Point((int)(tank.Location.GetX() - (rand.NextDouble() * 10)), (int)(tank.Location.GetY() - (rand.NextDouble() * 10)));
+                            e.Graphics.DrawImage(redShot, (float)tank.Location.GetX(), (float)tank.Location.GetY(), 15, 15);
+                            explosionCount++;
+                        }
+                        explosionCount = 0;
+                    }
                 }
             }
 
@@ -526,6 +529,6 @@ namespace TankWars
 
         }
 
-        
+
     }
 }
