@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml;
 using System.Diagnostics;
+using System.IO;
 
 namespace TankWars
 {
@@ -54,6 +55,10 @@ namespace TankWars
         private Pen redPen = new Pen(Color.Red);
         private Pen yellowPen = new Pen(Color.Yellow);
         private Pen greenPen = new Pen(Color.LawnGreen);
+        //Create a pen to draw a whiteline
+        Pen whitePen = new Pen(Color.White, 2);
+
+        private Font playerStyle = new Font("Ariel", 12, FontStyle.Regular);
 
         private Dictionary<int, Beam> beams = new Dictionary<int, Beam>();
 
@@ -333,13 +338,13 @@ namespace TankWars
                     e.Graphics.DrawImage(greyShot, -15, -15, 30, 30);
                     break;
                 case 2:
-                    e.Graphics.DrawImage(greenShot, -15, -15, 30, 30);
+                    e.Graphics.DrawImage(redShot, -15, -15, 30, 30);
                     break;
                 case 3:
-                    e.Graphics.DrawImage(greenShot, -15, -15, 30, 30);
+                    e.Graphics.DrawImage(yellowShot, -15, -15, 30, 30);
                     break;
                 case 4:
-                    e.Graphics.DrawImage(brownShot, -15, -15, 30, 30);
+                    e.Graphics.DrawImage(blueShot, -15, -15, 30, 30);
                     break;
                 case 5:
                     e.Graphics.DrawImage(violetShot, -15, -15, 30, 30);
@@ -362,10 +367,7 @@ namespace TankWars
         {
             Beam b = o as Beam;
 
-            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
-            //Create a pen to draw a whiteline
-            Pen whitePen = new Pen(Color.White, 2);
+            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;           
 
             //Create points for beam attack
             Point endx = new Point(0, -1000);
@@ -385,12 +387,27 @@ namespace TankWars
             Tank t = o as Tank;
             int health = t.HealthLevel;
             Rectangle healthbar;
+            int explosionCount = 0;
+            Random rand = new Random(10);
+            double randX;
+            double randY;
+            Point randPoint;
+
             //Switch for health level bar
             switch (health)
             {
                 case 0:
-                    //Draw explosion
-                    break;
+                    lock (World.Tanks)
+                    {
+                        World.Tanks.Remove(t.GetID());
+                        // add explosion sprite
+                        while(explosionCount < 15)
+                        {
+                           randPoint =  new Point((int) (t.Location.GetX() - (rand.NextDouble() * 10)),(int) (t.Location.GetY() - (rand.NextDouble() * 10)));
+                            e.Graphics.DrawImage(redShot, randPoint);
+                        }
+                        break;
+                    }
                 case 1:
                     healthbar = new Rectangle(-15, -40, 15, 5);
                     e.Graphics.FillRectangle(redPen.Brush, healthbar);
@@ -406,7 +423,12 @@ namespace TankWars
             }
         }
 
-
+        private void NameDrawer(object o, PaintEventArgs e)
+        {
+            Tank t = o as Tank;
+            byte[] imageBytes = Encoding.Unicode.GetBytes(t.GetName());
+            e.Graphics.DrawString(t.GetName(), playerStyle, whitePen.Brush, -23, 40);
+        }
 
         // This method is invoked when the DrawingPanel needs to be re-drawn
         protected override void OnPaint(PaintEventArgs e)
@@ -442,6 +464,7 @@ namespace TankWars
                     DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), tank.Orientation.ToAngle(), DrawTank);
                     DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), tank.AimDirection.ToAngle(), turretDrawer);
                     DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), 0, HealthDrawer);
+                    DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), 0, NameDrawer);
 
                 }
             }
@@ -502,5 +525,7 @@ namespace TankWars
 
 
         }
+
+        
     }
 }

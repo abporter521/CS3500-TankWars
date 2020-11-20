@@ -67,13 +67,17 @@ namespace TankWars
             ID = id;
             name = playerName;
             this.location = location;
-            //ADD ORIENTATION??
         }
 
-        //Get method for ID method
+        //Get method for ID 
         public int GetID()
         {
             return ID;
+        }
+        //Get method for Name
+        public string GetName()
+        {
+            return name;
         }
 
         //Get Set property related to location of projectile
