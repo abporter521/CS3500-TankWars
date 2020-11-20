@@ -67,9 +67,7 @@ namespace TankWars
             panel.MouseClick += HandleMouseClick;
             theController.PlayerIDGiven += InitializeWithID;
             theController.Error += DisplayErrorMessage;
-        }
-
-       
+        }  
 
         /// <summary>
         /// This handler method displays a message if one occurrs to the user

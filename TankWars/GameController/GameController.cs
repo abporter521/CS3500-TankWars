@@ -387,52 +387,6 @@ namespace TankWars
             string direction = "none";
             string fire;
 
-
-            //string curMove = movementOrder.Peek();
-
-            //switch (curMove)
-            //{
-            //    case "left":
-            //        if (leftKeyPressed)
-            //        {
-            //            direction = curMove;
-            //            break;
-            //        }
-            //        else
-            //            movementOrder.Pop();
-            //        break;
-            //    case "right":
-            //        if (rightKeyPressed)
-            //        {
-            //            direction = curMove;
-            //            break;
-            //        }
-            //        else
-            //            movementOrder.Pop();
-            //        break;
-            //    case "down":
-            //        if (downKeyPressed)
-            //        {
-            //            direction = curMove;
-            //            break;
-            //        }
-            //        else
-            //            movementOrder.Pop();
-            //        break;
-            //    case "up":
-            //        if (upKeyPressed)
-            //        {
-            //            direction = curMove;
-            //            break;
-            //        }
-            //        else
-            //            movementOrder.Pop();
-            //        break;
-            //}
-            //if (movementOrder.Count == 0)
-            //    direction = "none";
-
-
             //Check movement state
             if (leftKeyPressed || (leftKeyPressed && downKeyPressed))
                 direction = "left";
@@ -503,17 +457,8 @@ namespace TankWars
                             // Remove the tank so that it can be updated
                             theWorld.Tanks.Remove(curTank.GetID());
                         }
-                        //Check if tank has died
-                        if (curTank.HealthLevel > 0)
-                        {
-                            curTank.HasDied = false;
-                            // Re-add the tank back into the world
-                            theWorld.Tanks.Add(curTank.GetID(), curTank);
-                        }
-                        else
-                        {
-                            curTank.HasDied = true;
-                        }
+                        //Add the tank to the world
+                        theWorld.Tanks.Add(curTank.GetID(), curTank);
                     }
                     break;
                 case 1:
@@ -577,6 +522,7 @@ namespace TankWars
                     }
                     break;
             }
+            UpdateWorld();
         }
     }
 }

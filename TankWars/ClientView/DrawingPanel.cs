@@ -20,7 +20,8 @@ namespace TankWars
         //Variable containing the current world of the game
         private World World;
         private int selfTankID;
-
+        private int deadTankID;
+        private int timescalled;
         //Images for Tanks, walls, and background
         readonly Image wallSegment = Image.FromFile(@"..\..\..\Resources\Images\WallSprite.png");
         readonly Image background = Image.FromFile(@"..\..\..\Resources\Images\Background.png");
@@ -50,6 +51,15 @@ namespace TankWars
         readonly Image greenShot = Image.FromFile(@"..\..\..\Resources\Images\shot-green.png");
         readonly Image yellowShot = Image.FromFile(@"..\..\..\Resources\Images\shot-yellow.png");
         readonly Image powerup = Image.FromFile(@"..\..\..\Resources\Images\powerUp.png");
+
+        //Images for explosion
+        readonly Image ex1 = Image.FromFile(@"..\..\..\Resources\Images\bubble_explo2.png");
+        readonly Image ex2 = Image.FromFile(@"..\..\..\Resources\Images\bubble_explo3.png");
+        readonly Image ex3 = Image.FromFile(@"..\..\..\Resources\Images\bubble_explo4.png");
+        readonly Image ex4 = Image.FromFile(@"..\..\..\Resources\Images\bubble_explo5.png");
+
+        private System.Media.SoundPlayer explosionSound = new System.Media.SoundPlayer(@"..\..\..\Resources\Images\bangship.wav");
+        private bool soundFlag = true;
 
         //Paintbrushes
         private Pen redPen = new Pen(Color.Red);
@@ -140,8 +150,6 @@ namespace TankWars
         {
             Tank t = o as Tank;
 
-            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
             //TODO: find the relative file location of sprit image based on tank ID
             //Switch case here
             int tankID = (t.GetID() % 8);
@@ -194,8 +202,6 @@ namespace TankWars
         {
             //Extract tank from object so that we can assign turret color to correct tank
             Tank t = o as Tank;
-
-            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
             //Switch case here based on tank id
             int tankID = (t.GetID() % 8);
@@ -322,8 +328,6 @@ namespace TankWars
         {
             Projectile p = o as Projectile;
 
-            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
-
             //Switch case here
             int projID = (p.getOwner() % 8);
 
@@ -391,6 +395,8 @@ namespace TankWars
             //Switch for health level bar
             switch (health)
             {
+                case 0:
+                    break;
 
                 case 1:
                     healthbar = new Rectangle(-15, -40, 15, 5);
@@ -408,11 +414,56 @@ namespace TankWars
             }
         }
 
+        /// <summary>
+        /// Method to draw player name and score
+        /// </summary>
+        /// <param name="o"></param>
+        /// <param name="e"></param>
         private void NameDrawer(object o, PaintEventArgs e)
         {
             Tank t = o as Tank;
             byte[] imageBytes = Encoding.Unicode.GetBytes(t.GetName());
-            e.Graphics.DrawString(t.GetName() + ": " + t.GetScore().ToString(), playerStyle, whitePen.Brush, -25, 25);
+            e.Graphics.DrawString(t.GetName() + ": " + t.GetScore().ToString(), playerStyle, whitePen.Brush, -20, 27);
+        }
+
+        //Explodes the tank
+        private void ExplosionDrawer(object o, PaintEventArgs e)
+        {
+            //tank has died and draw explosion animation in it's place
+            // if that is the case.
+            timescalled++;
+            Random rand = new Random();
+            int explosion = rand.Next(0, 4);
+            // We check to see how many times the explosion drawer has been called
+            // and if it has been called over 250 times we know that our sound has ended
+            // and want to replay it.
+            if(timescalled > 150)
+            {
+                soundFlag = true;
+            }
+            if(soundFlag)
+            {
+                explosionSound.Play();
+                soundFlag = false;
+                timescalled = 0;
+            }
+            
+            switch(explosion)
+            {
+                case 0:
+                    e.Graphics.DrawImage(ex1, -30, -30, 45, 45);
+                    break;
+                case 1:
+                    e.Graphics.DrawImage(ex2, -30, -10, 45, 45);
+                    break;
+                case 2:
+                    e.Graphics.DrawImage(ex3, 0, -40, 45, 45);
+                    break;
+                case 3:
+                    e.Graphics.DrawImage(ex4, -20, 0, 45, 45);
+                    break;
+            }
+            return;
         }
 
         // This method is invoked when the DrawingPanel needs to be re-drawn
@@ -447,28 +498,16 @@ namespace TankWars
                 foreach (Tank tank in World.Tanks.Values)
                 {
                     //Do not draw the tank if it has died
-                    if (!tank.HasDied)
-                    {
-                        DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), tank.Orientation.ToAngle(), DrawTank);
-                        DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), tank.AimDirection.ToAngle(), turretDrawer);
-                        DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), 0, NameDrawer);
 
-                        //Draw the health level still because this includes the death explosion
-                        DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), 0, HealthDrawer);
-                    }
-                    else
-                    {
-                        Random rand = new Random();
-                        int explosionCount = 0;
-                        // add explosion sprite
-                        while (explosionCount < 15)
-                        {
-                            Point randPoint = new Point((int)(tank.Location.GetX() - (rand.NextDouble() * 10)), (int)(tank.Location.GetY() - (rand.NextDouble() * 10)));
-                            e.Graphics.DrawImage(redShot, (float)tank.Location.GetX(), (float)tank.Location.GetY(), 15, 15);
-                            explosionCount++;
-                        }
-                        explosionCount = 0;
-                    }
+                    DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), tank.Orientation.ToAngle(), DrawTank);
+                    DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), tank.AimDirection.ToAngle(), turretDrawer);
+                    DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), 0, NameDrawer);
+
+                    //Draw the health level still because this includes the death explosion
+                    DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), 0, HealthDrawer);
+
+                    if (tank.HealthLevel == 0)
+                        DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), 0, ExplosionDrawer);
                 }
             }
 
