@@ -43,3 +43,15 @@ by the Drawing Panel to display the world to the user.
 The Game Controller also handles movement from the users end with a handful of methods.  The movement methods trigger boolean flags describing the direction of the tank. Firing method
 sets boolean flags regarding if a weapon was fired. The turret method receives mouse input and converts it to a vector 2D that is uses to modify the tank turret direction. These
 three methods all call the UpdateTankMovment method which serializes a ControlCommand object holding each of these actions.
+
+
+VIEW 
+The view for our game has two main components.  The Drawing Panel and the Form.  
+Our form is very similar to layout to the solution provided.  We have spot for server name, player name and a connect button.  Hitting the enter key will trigger a connect button push.  
+Hitting the escape key will trigger the form to close out.  We have in the form multiple event handlers that for mouse movement, button pressing, and mouse clicking.
+All of these methods are small as most of them call methods in the controller.  There are a few flags however that are set so that these button clicks will not happen prematurely. 
+
+Our drawing panel has the variables that contain all the images and sounds that are used in our game.  We have the OnPaint method which loops through all objects in the commonly shared 
+world model.  This will draw each object in its respective drawer method.  We have some additional methods that draw the explosion sprite images at random at time of tank death, along with
+a sound byte.  We have also added sound bytes for weapon firing. For example, since we only want the firing shot to be done once per click, we have a setter method that sets a flag and allows the 
+sound byte to play.

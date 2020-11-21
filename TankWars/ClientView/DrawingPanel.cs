@@ -20,7 +20,6 @@ namespace TankWars
         //Variable containing the current world of the game
         private World World;
         private int selfTankID;
-        private int deadTankID;
         private int timescalled;
         //Images for Tanks, walls, and background
         readonly Image wallSegment = Image.FromFile(@"..\..\..\Resources\Images\WallSprite.png");
@@ -108,12 +107,7 @@ namespace TankWars
             return (int)w + size / 2;
         }
 
-        public void PaintBeam(Beam b)
-        {
-            beams.Add(b.GetID(), b);
-        }
-
-
+        //Delegate for object drawing methods
         public delegate void ObjectDrawer(object o, PaintEventArgs e);
 
         /// <summary>
@@ -198,7 +192,7 @@ namespace TankWars
         /// </summary>
         /// <param name="o"></param>
         /// <param name="e"></param>
-        private void turretDrawer(object o, PaintEventArgs e)
+        private void TurretDrawer(object o, PaintEventArgs e)
         {
             //Extract tank from object so that we can assign turret color to correct tank
             Tank t = o as Tank;
@@ -371,6 +365,7 @@ namespace TankWars
         {
             Beam b = o as Beam;
 
+            //Smooths out the beam
             e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
 
             //Create points for beam attack
@@ -395,19 +390,24 @@ namespace TankWars
             //Switch for health level bar
             switch (health)
             {
+                //Do nothing for 0 health
                 case 0:
                     break;
 
+                //Draw Tiny Red Health Bar
                 case 1:
                     healthbar = new Rectangle(-15, -40, 15, 5);
                     e.Graphics.FillRectangle(redPen.Brush, healthbar);
                     break;
+
+                //Draw smaller Yellow HealthBar
                 case 2:
                     healthbar = new Rectangle(-15, -40, 30, 5);
                     e.Graphics.FillRectangle(yellowPen.Brush, healthbar);
                     break;
+
+                //Draw Green Health Bar
                 case 3:
-                    //t.HasDied = false;
                     healthbar = new Rectangle(-23, -40, 45, 5);
                     e.Graphics.FillRectangle(greenPen.Brush, healthbar);
                     break;
@@ -437,18 +437,18 @@ namespace TankWars
             // We check to see how many times the explosion drawer has been called
             // and if it has been called over 250 times we know that our sound has ended
             // and want to replay it.
-            if(timescalled > 150)
+            if (timescalled > 150)
             {
                 soundFlag = true;
             }
-            if(soundFlag)
+            if (soundFlag)
             {
                 explosionSound.Play();
                 soundFlag = false;
                 timescalled = 0;
             }
-            
-            switch(explosion)
+
+            switch (explosion)
             {
                 case 0:
                     e.Graphics.DrawImage(ex1, -30, -30, 45, 45);
@@ -473,6 +473,7 @@ namespace TankWars
             if (World == null)
                 return;
 
+            //We want to make sure that the player (us) have been assigned an ID by the world first
             if (World.Tanks.ContainsKey(selfTankID))
             {
                 double playerX = World.Tanks[selfTankID].Location.GetX();// (the player's world-space X coordinate)
@@ -497,15 +498,15 @@ namespace TankWars
                 // Draw the players
                 foreach (Tank tank in World.Tanks.Values)
                 {
-                    //Do not draw the tank if it has died
-
+                    //Draw tank body, then turret then the name
                     DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), tank.Orientation.ToAngle(), DrawTank);
-                    DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), tank.AimDirection.ToAngle(), turretDrawer);
+                    DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), tank.AimDirection.ToAngle(), TurretDrawer);
                     DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), 0, NameDrawer);
 
-                    //Draw the health level still because this includes the death explosion
+                    //Draw the health level 
                     DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), 0, HealthDrawer);
 
+                    //If a tank has 0 health, trigger the explosion
                     if (tank.HealthLevel == 0)
                         DrawObjectWithTransform(e, tank, World.Size, tank.Location.GetX(), tank.Location.GetY(), 0, ExplosionDrawer);
                 }
@@ -534,10 +535,6 @@ namespace TankWars
                 //Draw walls
                 foreach (Wall wall in World.Walls.Values)
                 {
-                    ////find the direction of the wall
-                    //double y = Math.Abs(wall.GetP1().GetY() - wall.GetP2().GetY());
-                    //double x = Math.Abs(wall.GetP1().GetX() - wall.GetP2().GetX());
-
                     DrawObjectWithTransform(e, wall, World.Size, 0, 0, 0, WallDrawer);
                 }
             }
@@ -545,29 +542,16 @@ namespace TankWars
             {
                 if (World.Beams.Count > 0)
                 {
-                    //Start the stopwatch
-                    //frameWatch.Start();
                     //Draw beams
                     foreach (Beam beam in World.Beams.Values)
                     {
                         beam.Direction.Normalize();
                         DrawObjectWithTransform(e, beam, World.Size, beam.Origin.GetX(), beam.Origin.GetY(), beam.Direction.ToAngle(), BeamDrawer);
                     }
-                    //Restart the stopwatch
-                    //timeSum += frameWatch.ElapsedMilliseconds;
-                    //frameWatch.Restart();
                 }
             }
-
-
-
-
             //Let the base form do anything it needs to move on
             base.OnPaint(e);
-
-
         }
-
-
     }
 }

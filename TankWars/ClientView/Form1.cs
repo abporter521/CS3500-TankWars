@@ -179,7 +179,7 @@ namespace TankWars
             //If world exists, send mouse movement to controller
             if (worldExists)
             {
-                theController.TurretMouseAngle(e);
+                theController.TurretMouseAngle(new Point(e.Location.X, e.Location.Y));
             }
         }
 

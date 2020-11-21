@@ -284,7 +284,7 @@ namespace TankWars
         /// The turret will always point in the direction of the mouse
         /// </summary>
         /// <param name="mousePos"></param>
-        public void TurretMouseAngle(MouseEventArgs mousePos)
+        public void TurretMouseAngle(Point mousePos)
         {
             //Calculate the vector between mouse position and tank
             //425 is half of the view screen size.  Since tank is centered on the panel, that
@@ -407,18 +407,22 @@ namespace TankWars
             else
                 fire = "none";
 
-            // Normalize the aim direction vector
-            t.AimDirection.Normalize();
+            //Makes sure that button pressing before the world is drawn does not cause issues
+            if (selfTank != null)
+            {
+                // Normalize the aim direction vector
+                t.AimDirection.Normalize();
 
-            //Create the control command object with direction, weapon, and turret direction
-            ControlCommand cc = new ControlCommand(direction, fire, t.AimDirection);
+                //Create the control command object with direction, weapon, and turret direction
+                ControlCommand cc = new ControlCommand(direction, fire, t.AimDirection);
 
-            //Send to server
-            Networking.Send(server.TheSocket, JsonConvert.SerializeObject(cc) + '\n');
+                //Send to server
+                Networking.Send(server.TheSocket, JsonConvert.SerializeObject(cc) + '\n');
 
-            //Reset weapon states
-            leftClickPressed = false;
-            rightClickPressed = false;
+                //Reset weapon states
+                leftClickPressed = false;
+                rightClickPressed = false;
+            }
         }
 
         //Callback from timer to remove beam from world
