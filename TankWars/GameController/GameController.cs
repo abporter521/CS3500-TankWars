@@ -406,18 +406,22 @@ namespace TankWars
             else
                 fire = "none";
 
-            // Normalize the aim direction vector
-            t.AimDirection.Normalize();
+            //Makes sure that button pressing before the world is drawn does not cause issues
+            if (selfTank != null)
+            {
+                // Normalize the aim direction vector
+                t.AimDirection.Normalize();
 
-            //Create the control command object with direction, weapon, and turret direction
-            ControlCommand cc = new ControlCommand(direction, fire, t.AimDirection);
+                //Create the control command object with direction, weapon, and turret direction
+                ControlCommand cc = new ControlCommand(direction, fire, t.AimDirection);
 
-            //Send to server
-            Networking.Send(server.TheSocket, JsonConvert.SerializeObject(cc) + '\n');
+                //Send to server
+                Networking.Send(server.TheSocket, JsonConvert.SerializeObject(cc) + '\n');
 
-            //Reset weapon states
-            leftClickPressed = false;
-            rightClickPressed = false;
+                //Reset weapon states
+                leftClickPressed = false;
+                rightClickPressed = false;
+            }
         }
 
         //Callback from timer to remove beam from world
