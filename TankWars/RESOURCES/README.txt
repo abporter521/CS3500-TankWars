@@ -37,7 +37,7 @@ size and playerID. It will then receive walls and call a helper method that adds
 the gamecontroller begins an event loop to be constantly receiving data from the server. Any errors during this time will fire an Error event that displays a message to the user.
 
 Our UpdateWorld method is the core of the world building logic. This method receives a JSON string and deserializes it based on type. Then, in a thread-safe manner, will 
-add and remove these objects to the world object.  After processing the message, it will fire an UpdateWorld event that tells the view to redraw. For beam objects that do not have a alive or 
+add and remove these objects to the world object.  After processing the message, it will fire an UpdateWorld event that tells the view to redraw. For beam objects that do not have an alive or 
 dead state, there is a timer that uses a callback method to manage the lifespan of the beam.  It is important that this method function properly as the world object is the same that is used
 by the Drawing Panel to display the world to the user.
 The Game Controller also handles movement from the users end with a handful of methods.  The movement methods trigger boolean flags describing the direction of the tank. Firing method

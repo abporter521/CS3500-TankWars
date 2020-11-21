@@ -20,7 +20,7 @@ namespace TankWars
         //Variable containing the current world of the game
         private World World;
         private int selfTankID;
-        private int timescalled;
+        private int timesCalled;
 
         //Images for Tanks, walls, and background
         readonly Image wallSegment = Image.FromFile(@"..\..\..\Resources\Images\WallSprite.png");
@@ -326,15 +326,18 @@ namespace TankWars
         private void ProjectileDrawer(object o, PaintEventArgs e)
         {
             Projectile p = o as Projectile;
+            //vector to measure distance of projectile from tank
+            Vector2D disFromTank = p.Location - World.Tanks[selfTankID].Location;
 
-            //Switch case here
-            int projID = (p.getOwner() % 8);
-            if (shotSoundFlag)
+            //Ensures the firing sound only plays once.  When the player clicked and the projectile distance is within a hundred distance.
+            if (shotSoundFlag && disFromTank.Length() < 100)
             {
                 standardShotSound.Play();
                 shotSoundFlag = false;
             }
+
             // Get the projectile's ID number and assign them a tank color based on that
+            int projID = (p.getOwner() % 8);
             switch (projID)
             {
 
@@ -365,6 +368,9 @@ namespace TankWars
             }
         }
 
+        /// <summary>
+        /// Method to let panel know that the mouse was clicked.  Triggers sound
+        /// </summary>
         public void StandardShotSoundChanger()
         {
             shotSoundFlag = true;
@@ -396,6 +402,9 @@ namespace TankWars
             e.Graphics.DrawLine(whitePen, start, endx);
         }
 
+        /// <summary>
+        /// Method allows panel to know that beam was fired for sound
+        /// </summary>
         public void BeamShotSoundChanger()
         {
             beamShotSoundFlag = true;
@@ -446,9 +455,18 @@ namespace TankWars
         /// <param name="e"></param>
         private void NameDrawer(object o, PaintEventArgs e)
         {
+            //draws tank name and score
             Tank t = o as Tank;
+
+            //Sets up string format to center name on the tank
+            StringFormat sf = new StringFormat();
+            sf.LineAlignment = StringAlignment.Center;
+            sf.Alignment = StringAlignment.Center;
+            Rectangle rectan = new Rectangle(-150, 30, 300, 15);
+
+            //Draw the player name with scorre
             byte[] imageBytes = Encoding.Unicode.GetBytes(t.GetName());
-            e.Graphics.DrawString(t.GetName() + ": " + t.GetScore().ToString(), playerStyle, whitePen.Brush, -20, 27);
+            e.Graphics.DrawString(t.GetName() + ": " + t.GetScore().ToString(), playerStyle, whitePen.Brush, rectan, sf);
         }
 
         //Explodes the tank
@@ -456,13 +474,14 @@ namespace TankWars
         {
             //tank has died and draw explosion animation in it's place
             // if that is the case.
-            timescalled++;
+            timesCalled++;
             Random rand = new Random();
             int explosion = rand.Next(0, 4);
+
             // We check to see how many times the explosion drawer has been called
             // and if it has been called over 250 times we know that our sound has ended
             // and want to replay it.
-            if (timescalled > 150)
+            if (timesCalled > 150)
             {
                 explosionSoundFlag = true;
             }
@@ -470,9 +489,10 @@ namespace TankWars
             {
                 explosionSound.Play();
                 explosionSoundFlag = false;
-                timescalled = 0;
+                timesCalled = 0;
             }
 
+            //Randomly selects an explosion sprite to draw
             switch (explosion)
             {
                 case 0:
