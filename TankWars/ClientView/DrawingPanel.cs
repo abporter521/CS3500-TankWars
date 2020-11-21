@@ -377,7 +377,11 @@ namespace TankWars
         /// <param name="e"></param>
         private void BeamDrawer(object o, PaintEventArgs e)
         {
-            beamShotSound.Play();
+            if (beamShotSoundFlag)
+            {
+                beamShotSound.Play();
+                beamShotSoundFlag = false;
+            }
 
             Beam b = o as Beam;
 
