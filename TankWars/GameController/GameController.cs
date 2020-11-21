@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Net.WebSockets;
 using System.Threading;
-using System.Windows.Forms;
 using NetworkUtil;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -284,7 +283,7 @@ namespace TankWars
         /// The turret will always point in the direction of the mouse
         /// </summary>
         /// <param name="mousePos"></param>
-        public void TurretMouseAngle(MouseEventArgs mousePos)
+        public void TurretMouseAngle(Point mousePos)
         {
             //Calculate the vector between mouse position and tank
             //425 is half of the view screen size.  Since tank is centered on the panel, that

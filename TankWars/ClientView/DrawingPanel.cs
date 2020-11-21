@@ -22,6 +22,7 @@ namespace TankWars
         private int selfTankID;
         private int deadTankID;
         private int timescalled;
+
         //Images for Tanks, walls, and background
         readonly Image wallSegment = Image.FromFile(@"..\..\..\Resources\Images\WallSprite.png");
         readonly Image background = Image.FromFile(@"..\..\..\Resources\Images\Background.png");
@@ -59,7 +60,11 @@ namespace TankWars
         readonly Image ex4 = Image.FromFile(@"..\..\..\Resources\Images\bubble_explo5.png");
 
         private System.Media.SoundPlayer explosionSound = new System.Media.SoundPlayer(@"..\..\..\Resources\Images\bangship.wav");
-        private bool soundFlag = true;
+        private System.Media.SoundPlayer standardShotSound = new System.Media.SoundPlayer(@"..\..\..\Resources\Images\multimedia_retro_game_gun_shot.wav");
+        private System.Media.SoundPlayer beamShotSound = new System.Media.SoundPlayer(@"..\..\..\Resources\Images\zapsplat_sound_design_buzz_laser_style_44561.wav");
+        private bool explosionSoundFlag = true;
+        private bool shotSoundFlag = false;
+        private bool beamShotSoundFlag = false;
 
         //Paintbrushes
         private Pen redPen = new Pen(Color.Red);
@@ -330,7 +335,11 @@ namespace TankWars
 
             //Switch case here
             int projID = (p.getOwner() % 8);
-
+            if (shotSoundFlag)
+            {
+                standardShotSound.Play();
+                shotSoundFlag = false;
+            }
             // Get the projectile's ID number and assign them a tank color based on that
             switch (projID)
             {
@@ -362,6 +371,11 @@ namespace TankWars
             }
         }
 
+        public void StandardShotSoundChanger()
+        {
+            shotSoundFlag = true;
+        }
+
         /// <summary>
         /// Draws the beam attack
         /// </summary>
@@ -369,6 +383,8 @@ namespace TankWars
         /// <param name="e"></param>
         private void BeamDrawer(object o, PaintEventArgs e)
         {
+            beamShotSound.Play();
+
             Beam b = o as Beam;
 
             e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
@@ -379,6 +395,11 @@ namespace TankWars
 
             //Draw beam
             e.Graphics.DrawLine(whitePen, start, endx);
+        }
+
+        public void BeamShotSoundChanger()
+        {
+            beamShotSoundFlag = true;
         }
 
         /// <summary>
@@ -437,18 +458,18 @@ namespace TankWars
             // We check to see how many times the explosion drawer has been called
             // and if it has been called over 250 times we know that our sound has ended
             // and want to replay it.
-            if(timescalled > 150)
+            if (timescalled > 150)
             {
-                soundFlag = true;
+                explosionSoundFlag = true;
             }
-            if(soundFlag)
+            if (explosionSoundFlag)
             {
                 explosionSound.Play();
-                soundFlag = false;
+                explosionSoundFlag = false;
                 timescalled = 0;
             }
-            
-            switch(explosion)
+
+            switch (explosion)
             {
                 case 0:
                     e.Graphics.DrawImage(ex1, -30, -30, 45, 45);

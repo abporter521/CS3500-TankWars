@@ -47,7 +47,7 @@ namespace TankWars
             panel.Location = new Point(0, menuSize);
             panel.Size = new Size(viewSize, viewSize);
             this.Controls.Add(panel);
-            
+
             // Set the window size
             ClientSize = new Size(viewSize, viewSize + menuSize);
 
@@ -67,7 +67,7 @@ namespace TankWars
             panel.MouseClick += HandleMouseClick;
             theController.PlayerIDGiven += InitializeWithID;
             theController.Error += DisplayErrorMessage;
-        }  
+        }
 
         /// <summary>
         /// This handler method displays a message if one occurrs to the user
@@ -130,7 +130,7 @@ namespace TankWars
                 this.Close();
         }
 
-       
+
 
         /// <summary>
         /// Key up handler
@@ -163,12 +163,16 @@ namespace TankWars
             {
                 //If normal weapon was used
                 if (e.Button == MouseButtons.Left)
+                {
                     theController.WeaponFire("left");
+                    panel.StandardShotSoundChanger();
+                }
 
                 //If alternate weapon was used
                 if (e.Button == MouseButtons.Right)
                 {
                     theController.WeaponFire("right");
+                    panel.BeamShotSoundChanger();
                 }
             }
         }
@@ -179,7 +183,7 @@ namespace TankWars
             //If world exists, send mouse movement to controller
             if (worldExists)
             {
-                theController.TurretMouseAngle(e);
+                theController.TurretMouseAngle(new Point(e.Location.X, e.Location.Y));
             }
         }
 
