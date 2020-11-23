@@ -6,11 +6,20 @@ using System.Xml;
 
 namespace TankWars
 {
+    /// <summary>
+    /// This is the server class that will handle all logic of the game TankWars
+    /// This class will keep track of the locations of the players, collision logic
+    /// and when to push world updates.  
+    /// 
+    /// @Author Adam Scott & Andrew Porter
+    /// </summary>
     class Server
     {
+        //Dictionary to hold all the client socket state
         private Dictionary<long, SocketState> connections;
+
+        //Variables holding the settings of the game
         private World serverWorld;
-        private Server server;
         private int MSPerFrame;
         private int framesPerShot;
         private int respawnRate;
@@ -232,17 +241,35 @@ namespace TankWars
         /// <param name="client"></param>
         private void AcceptNewClients(SocketState client)
         {
-            //Set up random for new location
-            Random randLoc = new Random();
-            int x = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size);
-            int y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size);
+            if (client.ErrorOccured)
+            {
+                Console.WriteLine(client.ErrorMessage);
+            }
 
             //Add socket state to the collection of players
             connections.Add(client.ID, client);
 
-            //Get the player name from the socket state
-            string playerName = client.GetData();
+            //Set OnNetworkAction to receivePlayerInfo
+            client.OnNetworkAction = GetPlayerInfo;
 
+            //Get the player name from the socket state
+            Networking.GetData(client);
+        }
+
+        private void GetPlayerInfo(SocketState client)
+        {
+            if (client.ErrorOccured)
+            {
+                Console.WriteLine(client.ErrorMessage);
+            }
+
+            //Generate Location
+            Random randLoc = new Random();
+            int x = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size);
+            int y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size);
+
+            //Get the player name
+            string playerName = client.GetData().Trim('\n');
             //Create a new tank representing the player at a random location
             Tank newPlayer = new Tank(playerNumber, playerName, new Vector2D((double)x, (double)y));
             //Increase player ID number
