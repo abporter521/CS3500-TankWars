@@ -13,7 +13,11 @@ using System.IO;
 namespace TankWars
 {
     /// <summary>
+    /// This is the drawing that is used by the view to dispaly the world to the user.
+    /// This has an onPaint method that will redraw the world every frame received by the 
+    /// game controller.  Holds the images and sounds that are displayed.
     /// 
+    /// @Author Adam Scott & Andrew Porter
     /// </summary>
     public class DrawingPanel : Panel
     {
@@ -58,6 +62,7 @@ namespace TankWars
         readonly Image ex3 = Image.FromFile(@"..\..\..\Resources\Images\bubble_explo4.png");
         readonly Image ex4 = Image.FromFile(@"..\..\..\Resources\Images\bubble_explo5.png");
 
+        //Sounds and flags for shot sounds and explosions. Flags are kept to make sure they do not overlap themselves
         private System.Media.SoundPlayer explosionSound = new System.Media.SoundPlayer(@"..\..\..\Resources\Images\bangship.wav");
         private System.Media.SoundPlayer standardShotSound = new System.Media.SoundPlayer(@"..\..\..\Resources\Images\multimedia_retro_game_gun_shot.wav");
         private System.Media.SoundPlayer beamShotSound = new System.Media.SoundPlayer(@"..\..\..\Resources\Images\zapsplat_sound_design_buzz_laser_style_44561.wav");
@@ -72,9 +77,8 @@ namespace TankWars
         //Create a pen to draw a whiteline
         Pen whitePen = new Pen(Color.White, 2);
 
+        //Font for the player display name
         private Font playerStyle = new Font("Ariel", 12, FontStyle.Regular);
-
-        private Dictionary<int, Beam> beams = new Dictionary<int, Beam>();
 
         //The constructor for the DrawingPanwl
         public DrawingPanel(World theWorld)

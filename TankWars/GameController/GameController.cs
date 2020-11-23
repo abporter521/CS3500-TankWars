@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
-using System.Net.WebSockets;
 using System.Threading;
 using NetworkUtil;
 using Newtonsoft.Json;
@@ -301,14 +300,6 @@ namespace TankWars
             //Update the tank
             SendTankUpdate(selfTank);
         }
-
-        // To Fix Idea dump: Since there can be multiple keys being pressed at a time, we need to incorporate
-        // a data structure that is able to track the order at which each key has been pressed. Once these key(s) 
-        // are in the data structure we need to continue to execute the key that was first added until its key has 
-        // been released. Once this key has been released it will be removed from the data structure and the next most 
-        // recent key will start to be executed, assuming it has not been released yet. This will also fix our jitter issue
-        // and slow movement on the tank as we will only be sending one movement a frame whereas now we have the potential to send
-        // multiple a frame which is creating the slow moving laggy tank that we have right now.
 
         /// <summary>
         /// This method is called when a keyevent is registered

@@ -12,6 +12,13 @@ using System.Windows.Forms;
 
 namespace TankWars
 {
+    /// <summary>
+    /// This is the form class for PS8.  It handles all of the client inputs and communicates
+    /// them with the game controller class.  This will display the tank and world
+    /// to the user. 
+    /// 
+    /// @Author Andrew Porter & Adam Scott
+    /// </summary>
     public partial class Form1 : Form
     {
         // The controller handles updates from the "server"
@@ -187,6 +194,12 @@ namespace TankWars
             }
         }
 
+        /// <summary>
+        /// This method will connect to the game server when the connect button is clicked
+        /// There are flags so that user cannot have empty name or server name
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void connectButton_Click(object sender, EventArgs e)
         {
             //Make sure user enters a name
