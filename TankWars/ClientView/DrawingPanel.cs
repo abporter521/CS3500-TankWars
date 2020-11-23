@@ -153,7 +153,6 @@ namespace TankWars
         {
             Tank t = o as Tank;
 
-            //TODO: find the relative file location of sprit image based on tank ID
             //Switch case here
             int tankID = (t.GetID() % 8);
 
