@@ -7,7 +7,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Model\Model.csproj" />
-    <ProjectReference Include="..\RESOURCES\RESOURCES.csproj" />
   </ItemGroup>
 
   <ItemGroup>

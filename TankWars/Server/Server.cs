@@ -1,7 +1,7 @@
 ﻿using NetworkUtil;
 using System;
 using System.Collections.Generic;
-using System.Net.Sockets;
+using System.Diagnostics;
 using System.Xml;
 
 namespace TankWars
@@ -11,11 +11,11 @@ namespace TankWars
         private Dictionary<long, SocketState> connections;
         private World serverWorld;
         private Server server;
-        int MSPerFrame;
-        int framesPerShot;
-        int respawnRate;
+        private int MSPerFrame;
+        private int framesPerShot;
+        private int respawnRate;
 
-
+        private int playerNumber = 0;
 
         /// <summary>
         /// The main entry point into the program
@@ -26,11 +26,28 @@ namespace TankWars
             Console.WriteLine("Server Initiated");
             Server server = new Server();
 
-            //Set up the world and such from XML settings file
-            server.ReadFromFile();
-
             //Start the event loop of connecting clients
             server.StartServer();
+
+            //Set up the world and such from XML settings file
+            server.ReadFromSettingsFile();
+
+            //Sanity Check
+            Console.WriteLine("Settings file read");
+
+            Stopwatch delayWatch = new Stopwatch();
+            while (true)
+            {
+                //Busy loop to delay updating the world
+                while (delayWatch.ElapsedMilliseconds < server.MSPerFrame)
+                {
+                    //Do nothing
+                }
+                //Reset the watch back to 0
+                delayWatch.Reset();
+
+                server.UpdateWorld();
+            }
 
         }
 
@@ -52,7 +69,7 @@ namespace TankWars
         /// Reads from the settings XML file with tags. 
         /// Has settings for frame rate, respawn rate, world size, shot cooldown, and walls.
         /// </summary>
-        private void ReadFromFile()
+        private void ReadFromSettingsFile()
         {
             //Create the World from the settings file
             try
@@ -119,57 +136,86 @@ namespace TankWars
                                     break;
 
                                 case "Wall":
-                                    //Read thrice since settings will have the x and y coordinate two tags after the wall
                                     reader.Read();
-                                    reader.Read();
-                                    reader.Read();
+                                    // Get wall points
+                                    int x1 = 0, x2 = 0, y1 = 0, y2 = 0;
 
-                                    //Get P1 x coordinate
-                                    int x1 = int.Parse(reader.Value);
+                                    //flags for being in point
+                                    bool inP1 = false;
+                                    bool inP2 = false;
 
-                                    //Reads end tag of x, start tag of y, and value of P1 y
-                                    reader.Read();
-                                    reader.Read();
-                                    reader.Read();
-
-                                    //Gets the P1 y coordinate
-                                    int y1 = int.Parse(reader.Value);
-
-                                    //Build vector for P1
-                                    Vector2D point1 = new Vector2D(x1, y1);
-
-                                    //Moves to the P2 x coordinate
-                                    reader.Read();
-                                    reader.Read();
-                                    reader.Read();
-                                    reader.Read();
-                                    reader.Read();
-
-                                    //Get P2 x coordinate
-                                    int x2 = int.Parse(reader.Value);
-
-                                    //Reads end tag of x, start tag of y, and value of P2 y
-                                    reader.Read();
-                                    reader.Read();
-                                    reader.Read();
-
-                                    //Gets the P2 y coordinate
-                                    int y2 = int.Parse(reader.Value);
-
-                                    //Build vector for P2
-                                    Vector2D point2 = new Vector2D(x2, y2);
-
-                                    //Add the walls to the world model
-                                    lock (serverWorld.Walls)
+                                    //We know the rest of the setting file contains walls until the end game settings tag is given
+                                    //therefore we enter a loop that sets up the rest of the walls;
+                                    while (reader.Name != "GameSettings")
                                     {
-                                        serverWorld.Walls.Add(serverWorld.Walls.Count, new Wall(serverWorld.Walls.Count, point1, point2));
+                                        //progress to the next tag
+                                        reader.Read();
+                                        //Read thrice since settings will have the x and y coordinate two tags after the wall
+                                        if (reader.IsStartElement())
+                                        {
+                                            //Check the reader name
+                                            switch (reader.Name)
+                                            {
+                                                //We are looking at coordinates in the first point
+                                                case "p1":
+                                                    inP1 = true;
+                                                    break;
+
+                                                //looking at coordinates for the second point
+                                                case "p2":
+                                                    inP2 = true;
+                                                    break;
+
+                                                //assign x based on which point we are looking at
+                                                case "x":
+                                                    reader.Read();
+                                                    if (inP1)
+                                                        x1 = int.Parse(reader.Value);
+                                                    else if (inP2)
+                                                        x2 = int.Parse(reader.Value);
+                                                    break;
+
+                                                //assign y based on which point we are looking at
+                                                case "y":
+                                                    reader.Read();
+                                                    if (inP1)
+                                                        y1 = int.Parse(reader.Value);
+
+                                                    else if (inP2)
+                                                        y2 = int.Parse(reader.Value);
+                                                    break;
+
+                                            }
+                                        }
+                                        //If the element is not a start element, it must be an end element
+                                        else
+                                        {
+                                            //We have reached the end of one wall object, so build and add to world
+                                            if (reader.Name == "Wall")
+                                            {
+                                                //Build vector for P1
+                                                Vector2D point1 = new Vector2D(x1, y1);
+
+                                                //Build vector for P2
+                                                Vector2D point2 = new Vector2D(x2, y2);
+
+                                                //Add the walls to the world model
+                                                lock (serverWorld.Walls)
+                                                {
+                                                    serverWorld.Walls.Add(serverWorld.Walls.Count, new Wall(serverWorld.Walls.Count, point1, point2));
+                                                }
+                                            }
+                                            //Triggers out of first point
+                                            if (reader.Name == "p1")
+                                                inP1 = false;
+                                            //Triggers out of second point
+                                            else if (reader.Name == "p2")
+                                                inP2 = false;
+                                        }
                                     }
                                     break;
                             }
                         }
-                        //If the element is not a start element, it must be an end element
-                        else
-                            continue;
                     }
                 }
             }
@@ -180,9 +226,43 @@ namespace TankWars
             }
         }
 
+        /// <summary>
+        /// Adds the connection to our connection ID
+        /// </summary>
+        /// <param name="client"></param>
         private void AcceptNewClients(SocketState client)
         {
+            //Set up random for new location
+            Random randLoc = new Random();
+            int x = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size);
+            int y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size);
+
+            //Add socket state to the collection of players
             connections.Add(client.ID, client);
+
+            //Get the player name from the socket state
+            string playerName = client.GetData();
+
+            //Create a new tank representing the player at a random location
+            Tank newPlayer = new Tank(playerNumber, playerName, new Vector2D((double)x, (double)y));
+            //Increase player ID number
+            playerNumber++;
+
+            client.OnNetworkAction = GetDataFromClient;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="connection"></param>
+        private void GetDataFromClient(SocketState connection)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void UpdateWorld()
+        {
+
         }
     }
 }
