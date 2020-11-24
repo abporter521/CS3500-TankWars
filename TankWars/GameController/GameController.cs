@@ -364,6 +364,12 @@ namespace TankWars
                 case "down":
                     downKeyPressed = false;
                     break;
+                case "":
+                    leftKeyPressed = false;
+                    rightKeyPressed = false;
+                    upKeyPressed = false;
+                    downKeyPressed = false;
+                    break;
             }
             //Send tank update
             SendTankUpdate(selfTank);
