@@ -33,6 +33,7 @@
             this.playerText = new System.Windows.Forms.TextBox();
             this.hostText = new System.Windows.Forms.TextBox();
             this.connectButton = new System.Windows.Forms.Button();
+            this.instructionButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // hostLabel
@@ -83,11 +84,23 @@
             this.connectButton.UseVisualStyleBackColor = true;
             this.connectButton.Click += new System.EventHandler(this.connectButton_Click);
             // 
+            // instructionButton
+            // 
+            this.instructionButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 10F);
+            this.instructionButton.Location = new System.Drawing.Point(712, 18);
+            this.instructionButton.Name = "instructionButton";
+            this.instructionButton.Size = new System.Drawing.Size(67, 31);
+            this.instructionButton.TabIndex = 5;
+            this.instructionButton.Text = "Help";
+            this.instructionButton.UseVisualStyleBackColor = true;
+            this.instructionButton.Click += new System.EventHandler(this.instructionButton_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.instructionButton);
             this.Controls.Add(this.connectButton);
             this.Controls.Add(this.hostText);
             this.Controls.Add(this.playerText);
@@ -107,6 +120,7 @@
         private System.Windows.Forms.TextBox playerText;
         private System.Windows.Forms.TextBox hostText;
         private System.Windows.Forms.Button connectButton;
+        private System.Windows.Forms.Button instructionButton;
     }
 }
 

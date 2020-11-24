@@ -226,5 +226,16 @@ namespace TankWars
             //Connect with Server
             theController.Connect(IPName.Text, playerName.Text);
         }
+
+        /// <summary>
+        /// Prints out instructions to the user
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void instructionButton_Click(object sender, EventArgs e)
+        {
+            MessageBox.Show(" A: Left\n D: Right\n W: Up\n S: Down\n Left-Click: Standard Attack\n Right-Click: Special Attack\n Escape Key: Exit\n Enter Key: Connect");
+            return;
+        }
     }
 }

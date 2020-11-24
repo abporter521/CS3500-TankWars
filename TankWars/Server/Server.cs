@@ -24,6 +24,7 @@ namespace TankWars
         private int framesPerShot;
         private int respawnRate;
 
+        //Keep track of player ID
         private int playerNumber = 0;
 
         /// <summary>
@@ -72,6 +73,76 @@ namespace TankWars
         private void StartServer()
         {
             Networking.StartServer(AcceptNewClients, 11000);
+        }
+
+        /// <summary>
+        /// Adds the connection to our connection ID
+        /// </summary>
+        /// <param name="client"></param>
+        private void AcceptNewClients(SocketState client)
+        {
+            if (client.ErrorOccured)
+            {
+                Console.WriteLine(client.ErrorMessage);
+            }
+
+            //Add socket state to the collection of players
+            connections.Add(client.ID, client);
+
+            //Set OnNetworkAction to receivePlayerInfo
+            client.OnNetworkAction = GetPlayerInfo;
+
+            //Get the player name from the socket state
+            Networking.GetData(client);
+        }
+
+        /// <summary>
+        /// We will receive the player's name and assign an ID number
+        /// At this time we will also send to the client world size, the ID number
+        /// and the walls
+        /// </summary>
+        /// <param name="client"></param>
+        private void GetPlayerInfo(SocketState client)
+        {
+            if (client.ErrorOccured)
+            {
+                Console.WriteLine(client.ErrorMessage);
+            }
+
+            client.OnNetworkAction = GetDataFromClient;
+
+            //Generate Location
+            Random randLoc = new Random();
+            int x = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size);
+            int y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size);
+
+            //Get the player name
+            string playerName = client.GetData().Trim('\n');
+
+            //Send ID and worldsize info
+            Networking.Send(client.TheSocket, playerNumber.ToString() + "\n" + serverWorld.Size.ToString() + "\n");
+
+            //Create a new tank representing the player at a random location
+            Tank newPlayer = new Tank(playerNumber, playerName, new Vector2D((double)x, (double)y));
+            //Increase player ID number
+            playerNumber++;
+
+
+
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="connection"></param>
+        private void GetDataFromClient(SocketState connection)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void UpdateWorld()
+        {
+
         }
 
         /// <summary>
@@ -233,63 +304,6 @@ namespace TankWars
             {
                 Console.WriteLine("Error found in the settings XML file.");
             }
-        }
-
-        /// <summary>
-        /// Adds the connection to our connection ID
-        /// </summary>
-        /// <param name="client"></param>
-        private void AcceptNewClients(SocketState client)
-        {
-            if (client.ErrorOccured)
-            {
-                Console.WriteLine(client.ErrorMessage);
-            }
-
-            //Add socket state to the collection of players
-            connections.Add(client.ID, client);
-
-            //Set OnNetworkAction to receivePlayerInfo
-            client.OnNetworkAction = GetPlayerInfo;
-
-            //Get the player name from the socket state
-            Networking.GetData(client);
-        }
-
-        private void GetPlayerInfo(SocketState client)
-        {
-            if (client.ErrorOccured)
-            {
-                Console.WriteLine(client.ErrorMessage);
-            }
-
-            //Generate Location
-            Random randLoc = new Random();
-            int x = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size);
-            int y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size);
-
-            //Get the player name
-            string playerName = client.GetData().Trim('\n');
-            //Create a new tank representing the player at a random location
-            Tank newPlayer = new Tank(playerNumber, playerName, new Vector2D((double)x, (double)y));
-            //Increase player ID number
-            playerNumber++;
-
-            client.OnNetworkAction = GetDataFromClient;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="connection"></param>
-        private void GetDataFromClient(SocketState connection)
-        {
-            throw new NotImplementedException();
-        }
-
-        private void UpdateWorld()
-        {
-
         }
     }
 }
