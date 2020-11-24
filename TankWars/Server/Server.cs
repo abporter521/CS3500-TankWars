@@ -2,7 +2,9 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text;
 using System.Xml;
+using Newtonsoft.Json;
 
 namespace TankWars
 {
@@ -16,7 +18,7 @@ namespace TankWars
     class Server
     {
         //Dictionary to hold all the client socket state
-        private Dictionary<long, SocketState> connections;
+        private Dictionary<SocketState, int> connections;
 
         //Variables holding the settings of the game
         private World serverWorld;
@@ -24,6 +26,9 @@ namespace TankWars
         private int framesPerShot;
         private int respawnRate;
 
+        //Keep track of stats
+        private int engineForce = 3;
+        private int projectileForce = 25;
         //Keep track of player ID
         private int playerNumber = 0;
 
@@ -45,9 +50,10 @@ namespace TankWars
             //Sanity Check
             Console.WriteLine("Settings file read");
 
-            Stopwatch delayWatch = new Stopwatch();
+            Stopwatch delayWatch = new Stopwatch();           
             while (true)
             {
+                delayWatch.Start();
                 //Busy loop to delay updating the world
                 while (delayWatch.ElapsedMilliseconds < server.MSPerFrame)
                 {
@@ -55,6 +61,7 @@ namespace TankWars
                 }
                 //Reset the watch back to 0
                 delayWatch.Reset();
+
 
                 server.UpdateWorld();
             }
@@ -66,7 +73,7 @@ namespace TankWars
         /// </summary>
         public Server()
         {
-            connections = new Dictionary<long, SocketState>();
+            connections = new Dictionary<SocketState, int>();
         }
 
         ///Begins loop of accepting new clients
@@ -85,9 +92,6 @@ namespace TankWars
             {
                 Console.WriteLine(client.ErrorMessage);
             }
-
-            //Add socket state to the collection of players
-            connections.Add(client.ID, client);
 
             //Set OnNetworkAction to receivePlayerInfo
             client.OnNetworkAction = GetPlayerInfo;
@@ -109,40 +113,201 @@ namespace TankWars
                 Console.WriteLine(client.ErrorMessage);
             }
 
-            client.OnNetworkAction = GetDataFromClient;
+            //Set the new callback action
+            client.OnNetworkAction = GetActionDataFromClient;
 
             //Generate Location
             Random randLoc = new Random();
-            int x = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size);
-            int y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size);
+            int x = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size)/2;
+            int y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size)/2;
+
+            Console.WriteLine("Tank position is " + x.ToString() +" "+ y.ToString());
 
             //Get the player name
             string playerName = client.GetData().Trim('\n');
 
+            //Create a new tank representing the player at a random location
+            Tank newPlayer = new Tank(playerNumber, playerName, new Vector2D((double)x, (double)y));
+
+            //Add player to our connections
+            lock (connections)
+            {
+                //Add socket state to the collection of players with their ID number
+                connections.Add(client, playerNumber);
+            }
+            Console.WriteLine("Player " + playerNumber.ToString() + ": " + playerName + " has connected.");
+
+            //Add player to server world
+            lock (serverWorld.Tanks)
+            {
+                serverWorld.Tanks.Add(newPlayer.GetID(), newPlayer);
+            }
+
             //Send ID and worldsize info
             Networking.Send(client.TheSocket, playerNumber.ToString() + "\n" + serverWorld.Size.ToString() + "\n");
 
-            //Create a new tank representing the player at a random location
-            Tank newPlayer = new Tank(playerNumber, playerName, new Vector2D((double)x, (double)y));
+            //Create a string builder info to serialize and send all the walls
+            StringBuilder wallinfo = new StringBuilder();
+            foreach (Wall wall in serverWorld.Walls.Values)
+            {
+                wallinfo.Append(JsonConvert.SerializeObject(wall) + "\n");
+            }
+
+            //Send walls to the client
+            Networking.Send(client.TheSocket, wallinfo.ToString());
+
             //Increase player ID number
             playerNumber++;
 
+            //Empty the socket state of data
+            client.ClearData();
 
+            //Begin receive loop
+            Networking.GetData(client);
 
         }
 
         /// <summary>
-        /// 
+        /// This method will implement changes created from Control Commands
         /// </summary>
         /// <param name="connection"></param>
-        private void GetDataFromClient(SocketState connection)
+        private void GetActionDataFromClient(SocketState connectionToClient)
         {
-            throw new NotImplementedException();
+            //Gets message from the client
+            string wholeData = connectionToClient.GetData();
+            string completeMessage;
+
+            //Make sure data is complete
+            if (!wholeData.EndsWith("\n"))
+            {
+                //find the last instance of the newline and split the string at that point
+                int completedPoint = wholeData.LastIndexOf('\n');
+                completeMessage = wholeData.Substring(0, completedPoint);
+            }
+            //Message is complete and we can move forward as normal
+            else
+                completeMessage = wholeData;
+
+            //Split string by newline
+            string[] movementUpdates = completeMessage.Split('\n');
+            foreach (string command in movementUpdates)
+            {
+                //Skip over empty strings
+                if (command == "")
+                    continue;
+
+                //Process command
+                ControlCommand newCommand = JsonConvert.DeserializeObject<ControlCommand>(command);
+                UpdateTankState(newCommand, connectionToClient);
+            }
+            //Remove old data
+            connectionToClient.RemoveData(0,completeMessage.Length);
+
+            //Begin loop
+            Networking.GetData(connectionToClient);
         }
 
-        private void UpdateWorld()
+
+        private void UpdateTankState(ControlCommand cc, SocketState player)
+        {
+            int ID = connections[player];
+
+            //Get the tank and update location and projectile status
+            Tank curTank = serverWorld.Tanks[ID];
+
+            lock (serverWorld.Tanks)
+            {
+                //Update tank state
+                TankMovement(cc.GetDirection(), curTank);
+                serverWorld.Tanks[ID] = curTank;
+            }
+
+            //Check fire state
+            ProjectileCreation(cc, curTank);
+        }
+
+        /// <summary>
+        /// This method updates the tank location
+        /// </summary>
+        /// <param name="dir"></param>
+        /// <param name="tank"></param>
+        private void TankMovement(String dir, Tank tank)
         {
 
+            //Check for wall collisions and world out of bounds
+            
+
+
+            Vector2D velocity = new Vector2D(0, 0);
+            switch (dir)
+            {
+                case "left":
+                    velocity = new Vector2D(-engineForce, 0.0);
+                    tank.Location += velocity;
+                    break;
+                case "right":
+                    velocity = new Vector2D(engineForce, 0.0);
+                    tank.Location += velocity;
+                    break;
+                case "up":
+                    velocity = new Vector2D(0, -engineForce);
+                    tank.Location += velocity;
+                    break;
+                case "down":
+                    velocity = new Vector2D(0, engineForce);
+                    tank.Location += velocity;
+                    break;
+                case "none":
+                    break;
+            }
+
+        }
+
+        private void ProjectileCreation(ControlCommand cc, Tank tank)
+        {
+            String fireStatus = cc.GetFire();
+            Vector2D turretDirection = cc.GetTurretDirection();
+            if (fireStatus == "main")
+            {
+                // Make changes to ID of projectile so two projectiles do not have the same ID if spawned at same time
+                Projectile proj = new Projectile(tank.GetID(), tank.Location, turretDirection, tank.GetID());
+                lock (serverWorld.Projectiles)
+                {
+                    serverWorld.Projectiles.Add(proj.getID(), proj);
+                }
+            }
+            else if (fireStatus == "alt")
+            {
+                // Make changes to ID of beam so two beams do not have the same ID if spawned at same time
+                Beam beam = new Beam(tank.Location, turretDirection, tank.GetID(), tank.GetID());
+            }
+        }
+        private void UpdateWorld()
+        {
+            //Check if tank has  disconnected
+
+            //Check proj collisions w/ tank or wall
+
+            //Check on powerups
+
+            //Build JSON and send to each client
+            StringBuilder newWorld = new StringBuilder();
+            lock (serverWorld.Tanks)
+            {
+                foreach (Tank t in serverWorld.Tanks.Values)
+                    newWorld.Append(JsonConvert.SerializeObject(t) + "\n");
+            }
+            foreach (Projectile p in serverWorld.Projectiles.Values)
+                newWorld.Append(JsonConvert.SerializeObject(p) + "\n");
+            //foreach (Tank t in serverWorld.Tanks.Values)
+               // newWorld.Append(JsonConvert.SerializeObject(t) + "\n");
+            //foreach (Tank t in serverWorld.Tanks.Values)
+               // newWorld.Append(JsonConvert.SerializeObject(t) + "\n");
+
+            foreach (SocketState clients in connections.Keys)
+            {
+                Networking.Send(clients.TheSocket, newWorld.ToString());
+            }
         }
 
         /// <summary>
