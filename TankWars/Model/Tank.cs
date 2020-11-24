@@ -67,6 +67,7 @@ namespace TankWars
             ID = id;
             name = playerName;
             this.location = location;
+            orientation = new Vector2D(0, -1);
         }
 
         //Get method for ID 
