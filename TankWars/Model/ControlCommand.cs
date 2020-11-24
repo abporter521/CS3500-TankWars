@@ -40,5 +40,21 @@ namespace TankWars
             fire = noneMainAlt;
             tdir = fireDirection;
         }
+
+        //Gets the movement of the tank
+        public string GetDirection()
+        {
+            return moving;
+        }
+
+        public string GetFire()
+        {
+            return fire;
+        }
+
+        public Vector2D GetTurretDirection()
+        {
+            return tdir;
+        }
     }
 }
