@@ -56,6 +56,7 @@ namespace TankWars
         [JsonProperty(PropertyName = "join")]
         private bool joined = false;
 
+        private int powerUpNumber = 0;
         /// <summary>
         /// Constructor for the tank object
         /// </summary>
@@ -133,6 +134,21 @@ namespace TankWars
         {
             get => disconnected;
             set => disconnected = value;
+        }
+
+        public int PowerUpNumber
+        {
+            get => powerUpNumber;
+        }
+        // Increment number of powerups tank has
+        public void CollectPowerup()
+        {
+            powerUpNumber++;
+        }
+
+        public void UsePowerup()
+        {
+            powerUpNumber--;
         }
     }
 

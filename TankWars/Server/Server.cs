@@ -121,13 +121,21 @@ namespace TankWars
             //Generate Location
             Random randLoc = new Random();
             int x = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
-            int y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;         
+            int y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
 
             //Get the player name
             string playerName = client.GetData().Trim('\n');
 
             //Create a new tank representing the player at a random location
             Tank newPlayer = new Tank(playerNumber, playerName, new Vector2D((double)x, (double)y));
+
+            //We don't spawn on walls or powerups
+            while (CheckForCollision(newPlayer, 1))
+            {
+                x = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
+                y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
+                newPlayer.Location = new Vector2D(x, y);
+            }
 
             //Add player to our connections
             lock (connections)
@@ -174,6 +182,18 @@ namespace TankWars
         private void GetActionDataFromClient(SocketState connectionToClient)
         {
             //Gets message from the client
+            if(connectionToClient.ErrorOccured)
+            {
+                Console.WriteLine("Player "+ connections[connectionToClient].ToString() + " has disconnected");
+
+                lock (connections)
+                {
+                    int tankID = connections[connectionToClient];
+                    serverWorld.Tanks[tankID].HasDisconnected = true;
+                    serverWorld.Tanks[tankID].HasDied = true;
+                    return;
+                }
+            }
             string wholeData = connectionToClient.GetData();
             string completeMessage;
 
@@ -248,11 +268,9 @@ namespace TankWars
         private void TankMovement(String dir, Tank tank)
         {
 
-            //Check for wall collisions and world out of bounds
-
-
             //Each case adjusts tank orientation, and movement
             Vector2D velocity = new Vector2D(0, 0);
+            Vector2D oldLoc = tank.Location;
             switch (dir)
             {
                 case "left":
@@ -279,6 +297,9 @@ namespace TankWars
                     break;
             }
 
+            //Check for wall collisions and world out of bounds
+            if (CheckForCollision(tank, 1))
+                tank.Location = oldLoc;
         }
 
         private void ProjectileCreation(ControlCommand cc, Tank tank)
@@ -296,8 +317,16 @@ namespace TankWars
             }
             else if (fireStatus == "alt")
             {
-                // Make changes to ID of beam so two beams do not have the same ID if spawned at same time
-                Beam beam = new Beam(tank.Location, turretDirection, tank.GetID(), tank.GetID());
+                if(tank.PowerUpNumber > 0)
+                {
+                    // Make changes to ID of beam so two beams do not have the same ID if spawned at same time
+                    Beam beam = new Beam(tank.Location, turretDirection, tank.GetID(), tank.GetID());
+                    tank.UsePowerup();
+                    lock(serverWorld.Beams)
+                    {
+                        serverWorld.Beams.Add(beam.GetID(), beam);
+                    }
+                }
             }
 
         }
@@ -317,12 +346,29 @@ namespace TankWars
 
             //Check on powerups
 
+
             //Build JSON and send to each client
             StringBuilder newWorld = new StringBuilder();
+
+            lock(serverWorld.PowerUps)
+            {
+                foreach(PowerUp power in serverWorld.PowerUps.Values)
+                {
+                    newWorld.Append(JsonConvert.SerializeObject(power) + "\n");
+                    if(power.collected)
+                    {
+                        serverWorld.PowerUps.Remove(power.getID());
+                    }
+                }
+            }
             lock (serverWorld.Tanks)
             {
                 foreach (Tank t in serverWorld.Tanks.Values)
+                {
                     newWorld.Append(JsonConvert.SerializeObject(t) + "\n");
+                    if (t.HasDisconnected)
+                        serverWorld.Tanks.Remove(t.GetID());
+                }
             }
             lock (serverWorld.Projectiles)
             {
@@ -335,15 +381,33 @@ namespace TankWars
                 }
 
             }
-            //foreach (Tank t in serverWorld.Tanks.Values)
-            // newWorld.Append(JsonConvert.SerializeObject(t) + "\n");
-            //foreach (Tank t in serverWorld.Tanks.Values)
-            // newWorld.Append(JsonConvert.SerializeObject(t) + "\n");
+            lock (serverWorld.Beams)
+            {
+                foreach (Beam b in serverWorld.Beams.Values)
+                {
+                    newWorld.Append(JsonConvert.SerializeObject(b) + "\n");
+                    // Remove beam as soon as it has been shot for one frame
+                    serverWorld.Beams.Remove(b.GetID());
+                }
+            }
+            lock (serverWorld.PowerUps)
+            {
+                foreach (PowerUp p in serverWorld.PowerUps.Values)
+                {
+                    newWorld.Append(JsonConvert.SerializeObject(p) + "\n");
+                    // remove from server world if collected
+                    if(p.collected)
+                    {
+                        serverWorld.PowerUps.Remove(p.getID());
+                    }
+                }
+            }
             lock (connections)
             {
                 foreach (SocketState clients in connections.Keys)
                 {
-                    Networking.Send(clients.TheSocket, newWorld.ToString());
+                    if (clients.TheSocket.Connected)
+                        Networking.Send(clients.TheSocket, newWorld.ToString());
                 }
             }
         }
@@ -439,9 +503,62 @@ namespace TankWars
                         }
                     }
                 }
+            }
+            //object is a tank
+            else if (objectType == 1)
+            {
+                Tank t = o as Tank;
 
+                //Check for powerup collision and wall collision
+                foreach (Wall curWall in serverWorld.Walls.Values)
+                {
+                    //Get range of values for x
+                    double high = Math.Max(curWall.GetP2().GetX(), curWall.GetP1().GetX()) + 55;
+                    double low = Math.Min(curWall.GetP2().GetX(), curWall.GetP1().GetX()) - 55;
 
+                    //Check if projectile is in between range of x values
+                    if (t.Location.GetX() < high && t.Location.GetX() > low)
+                        collisionStatusX = true;
 
+                    //Get range of values for y
+                    high = Math.Max(curWall.GetP2().GetY(), curWall.GetP1().GetY()) + 55;
+                    low = Math.Min(curWall.GetP2().GetY(), curWall.GetP1().GetY()) - 55;
+
+                    //Check if projectile is in between range of y values
+                    if (t.Location.GetY() < high && t.Location.GetY() > low)
+                        collisionStatusY = true;
+
+                    //If both are within range, projectile collided with wall so return true
+                    if (collisionStatusX && collisionStatusY)
+                        return true;
+                    else //Projectile did not collide with this wall, reset flags and move on to next segment
+                    {
+                        collisionStatusY = false;
+                        collisionStatusX = false;
+                        continue;
+                    }
+                }
+
+                lock (serverWorld.PowerUps)
+                {
+                    foreach (PowerUp curPower in serverWorld.PowerUps.Values)
+                    {
+                        //Create radius around tank 
+                        Vector2D radius = curPower.position - t.Location;
+
+                        //If distance between projectile and tank is less than 30, its a hit
+                        if (radius.Length() < 30)
+                        {
+                            // Increment powerUp number
+                            t.CollectPowerup();
+
+                            //if health is 0, then it has died
+                            curPower.collected = true;
+                            return true;
+                        }
+                    } 
+                }
+            }else if(objectType == 2) {
 
             }
             return false;
