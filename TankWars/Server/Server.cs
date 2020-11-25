@@ -8,6 +8,8 @@ using Newtonsoft.Json;
 
 namespace TankWars
 {
+    //TODO: FIX COOLDOWN OF PROJECTILE FIRE
+
     /// <summary>
     /// This is the server class that will handle all logic of the game TankWars
     /// This class will keep track of the locations of the players, collision logic
@@ -119,9 +121,7 @@ namespace TankWars
             //Generate Location
             Random randLoc = new Random();
             int x = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
-            int y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
-
-            Console.WriteLine("Tank position is " + x.ToString() + " " + y.ToString());
+            int y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;         
 
             //Get the player name
             string playerName = client.GetData().Trim('\n');
@@ -313,6 +313,8 @@ namespace TankWars
 
             //Check proj collisions w/ tank or wall
             UpdateProjectileState();
+
+
             //Check on powerups
 
             //Build JSON and send to each client
@@ -337,10 +339,12 @@ namespace TankWars
             // newWorld.Append(JsonConvert.SerializeObject(t) + "\n");
             //foreach (Tank t in serverWorld.Tanks.Values)
             // newWorld.Append(JsonConvert.SerializeObject(t) + "\n");
-
-            foreach (SocketState clients in connections.Keys)
+            lock (connections)
             {
-                Networking.Send(clients.TheSocket, newWorld.ToString());
+                foreach (SocketState clients in connections.Keys)
+                {
+                    Networking.Send(clients.TheSocket, newWorld.ToString());
+                }
             }
         }
 
@@ -362,10 +366,10 @@ namespace TankWars
                     {
                         serverWorld.Projectiles[proj.getID()].Died = true;
                     }
-                    
+
                 }
             }
-        }     
+        }
 
         /// <summary>
         /// General purpose helper method that checks if an object collides with
@@ -414,7 +418,27 @@ namespace TankWars
                     }
                 }
 
-                foreach(Tank t in serverWorld.Tanks.Values)
+                //Check collision against tanks
+                lock (serverWorld.Tanks)
+                {
+                    foreach (Tank t in serverWorld.Tanks.Values)
+                    {
+                        //Create radius around tank 
+                        Vector2D radius = proj.Location - t.Location;
+
+                        //If distance between projectile and tank is less than 30, its a hit
+                        if (radius.Length() < 30 && proj.getID() != t.GetID())
+                        {
+                            //decrement tank health
+                            t.HealthLevel -= 1;
+
+                            //if health is 0, then it has died
+                            if (t.HealthLevel == 0)
+                                t.HasDied = true;
+                            return true;
+                        }
+                    }
+                }
 
 
 
