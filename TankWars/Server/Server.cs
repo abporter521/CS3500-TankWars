@@ -27,10 +27,12 @@ namespace TankWars
         private int MSPerFrame;
         private int framesPerShot;
         private int respawnRate;
-
+        private int frameCounter = 0;
+        private int maxPowerUpNumber = 2;
         //Keep track of stats
         private int engineForce = 3;
         private int projectileForce = 25;
+        private int powerUpCount = 0;
         //Keep track of player ID
         private int playerNumber = 0;
 
@@ -64,7 +66,7 @@ namespace TankWars
                 //Reset the watch back to 0
                 delayWatch.Reset();
 
-
+                server.GeneratePowerUp();
                 server.UpdateWorld();
             }
 
@@ -182,9 +184,9 @@ namespace TankWars
         private void GetActionDataFromClient(SocketState connectionToClient)
         {
             //Gets message from the client
-            if(connectionToClient.ErrorOccured)
+            if (connectionToClient.ErrorOccured)
             {
-                Console.WriteLine("Player "+ connections[connectionToClient].ToString() + " has disconnected");
+                Console.WriteLine("Player " + connections[connectionToClient].ToString() + " has disconnected");
 
                 lock (connections)
                 {
@@ -302,11 +304,19 @@ namespace TankWars
                 tank.Location = oldLoc;
         }
 
+        /// <summary>
+        /// This method will create a projectile object or beam object
+        /// </summary>
+        /// <param name="cc"></param>
+        /// <param name="tank"></param>
         private void ProjectileCreation(ControlCommand cc, Tank tank)
         {
+            //figure out what kind of weapon
             String fireStatus = cc.GetFire();
+
+            //Get aim direction
             Vector2D turretDirection = cc.GetTurretDirection();
-            if (fireStatus == "main")
+            if (fireStatus == "main")// Normal attack
             {
                 // Make changes to ID of projectile so two projectiles do not have the same ID if spawned at same time
                 Projectile proj = new Projectile(tank.GetID(), tank.Location, turretDirection, tank.GetID());
@@ -315,14 +325,18 @@ namespace TankWars
                     serverWorld.Projectiles[proj.getID()] = proj;
                 }
             }
+
+            //This is a beam attack
             else if (fireStatus == "alt")
             {
-                if(tank.PowerUpNumber > 0)
+                //Check if a tank has picked up a powerup
+                if (tank.PowerUpNumber > 0)
                 {
                     // Make changes to ID of beam so two beams do not have the same ID if spawned at same time
                     Beam beam = new Beam(tank.Location, turretDirection, tank.GetID(), tank.GetID());
+                    //Decrement tanks powerup number
                     tank.UsePowerup();
-                    lock(serverWorld.Beams)
+                    lock (serverWorld.Beams)
                     {
                         serverWorld.Beams.Add(beam.GetID(), beam);
                     }
@@ -330,7 +344,46 @@ namespace TankWars
             }
 
         }
+        /// <summary>
+        /// Generates powerups every 1650 frames as default.  Will place in 
+        /// server's collection of powerups.
+        /// </summary>
+        private void GeneratePowerUp()
+        {
+            //Variable to count the 
+            frameCounter++;
+            Random randLoc = new Random();
+            
+            //If enough frames have passed and the number of powerups does not exceed the max, create a powerup
+            if (frameCounter > 1650 && serverWorld.PowerUps.Count <= maxPowerUpNumber)
+            {
+                //Get location
+                int x = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
+                int y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
 
+
+                //Create a new powerUp at a random location
+                Vector2D powerUpPos = new Vector2D(x, y);
+                PowerUp power = new PowerUp(powerUpPos, powerUpCount);
+                powerUpCount++;
+
+                //We don't spawn on walls or tanks
+                while (CheckForCollision(power, 2))
+                {
+                    x = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
+                    y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
+                    power.position = new Vector2D(x, y);
+                }
+                //Add the the server's collection of powerups
+                lock (serverWorld.PowerUps)
+                {
+                    serverWorld.PowerUps.Add(powerUpCount, power);
+                }
+
+                //reset the counter
+                frameCounter = 0;
+            }
+        }
         /// <summary>
         /// This Method is called once per frame according to the settings.
         /// This method will update any projectiles, powerups and beams,
@@ -350,12 +403,12 @@ namespace TankWars
             //Build JSON and send to each client
             StringBuilder newWorld = new StringBuilder();
 
-            lock(serverWorld.PowerUps)
+            lock (serverWorld.PowerUps)
             {
-                foreach(PowerUp power in serverWorld.PowerUps.Values)
+                foreach (PowerUp power in serverWorld.PowerUps.Values)
                 {
                     newWorld.Append(JsonConvert.SerializeObject(power) + "\n");
-                    if(power.collected)
+                    if (power.collected)
                     {
                         serverWorld.PowerUps.Remove(power.getID());
                     }
@@ -396,7 +449,7 @@ namespace TankWars
                 {
                     newWorld.Append(JsonConvert.SerializeObject(p) + "\n");
                     // remove from server world if collected
-                    if(p.collected)
+                    if (p.collected)
                     {
                         serverWorld.PowerUps.Remove(p.getID());
                     }
@@ -554,12 +607,56 @@ namespace TankWars
 
                             //if health is 0, then it has died
                             curPower.collected = true;
+                            return false;
+                        }
+                    }
+                }
+            }
+            else if (objectType == 2)
+            {
+                PowerUp power = o as PowerUp;
+                foreach (Wall curWall in serverWorld.Walls.Values)
+                {
+                    //Get range of values for x
+                    double high = Math.Max(curWall.GetP2().GetX(), curWall.GetP1().GetX()) + 25;
+                    double low = Math.Min(curWall.GetP2().GetX(), curWall.GetP1().GetX()) - 25;
+
+                    //Check if powerUp is in between range of x values
+                    if (power.position.GetX() < high && power.position.GetX() > low)
+                        collisionStatusX = true;
+
+                    //Get range of values for y
+                    high = Math.Max(curWall.GetP2().GetY(), curWall.GetP1().GetY()) + 25;
+                    low = Math.Min(curWall.GetP2().GetY(), curWall.GetP1().GetY()) - 25;
+
+                    //Check if powerUp is in between range of y values
+                    if (power.position.GetY() < high && power.position.GetY() > low)
+                        collisionStatusY = true;
+
+                    //If both are within range, powerUp collided with wall so return true
+                    if (collisionStatusX && collisionStatusY)
+                        return true;
+                    else //PowerUp did not collide with this wall, reset flags and move on to next segment
+                    {
+                        collisionStatusY = false;
+                        collisionStatusX = false;
+                        continue;
+                    }
+                }
+                lock (serverWorld.Tanks)
+                {
+                    foreach (Tank t in serverWorld.Tanks.Values)
+                    {
+                        //Create radius around tank 
+                        Vector2D radius = power.position - t.Location;
+
+                        //If distance between powerUp and tank is less than 30, it can't spawn
+                        if (radius.Length() < 30)
+                        {
                             return true;
                         }
-                    } 
+                    }
                 }
-            }else if(objectType == 2) {
-
             }
             return false;
         }
