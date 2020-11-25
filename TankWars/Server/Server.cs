@@ -50,7 +50,7 @@ namespace TankWars
             //Sanity Check
             Console.WriteLine("Settings file read");
 
-            Stopwatch delayWatch = new Stopwatch();           
+            Stopwatch delayWatch = new Stopwatch();
             while (true)
             {
                 delayWatch.Start();
@@ -118,10 +118,10 @@ namespace TankWars
 
             //Generate Location
             Random randLoc = new Random();
-            int x = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size)/2;
-            int y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size)/2;
+            int x = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
+            int y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
 
-            Console.WriteLine("Tank position is " + x.ToString() +" "+ y.ToString());
+            Console.WriteLine("Tank position is " + x.ToString() + " " + y.ToString());
 
             //Get the player name
             string playerName = client.GetData().Trim('\n');
@@ -201,15 +201,23 @@ namespace TankWars
                 UpdateTankState(newCommand, connectionToClient);
             }
             //Remove old data
-            connectionToClient.RemoveData(0,completeMessage.Length);
+            connectionToClient.RemoveData(0, completeMessage.Length);
 
             //Begin loop
             Networking.GetData(connectionToClient);
         }
 
-
+        /// <summary>
+        /// This method is designed to take input data from the player.
+        /// This method will take care of tank movement, turret rotation
+        /// and projectile creation.
+        /// 
+        /// </summary>
+        /// <param name="cc"></param> Control command received by client
+        /// <param name="player"></param> The SocketState connection of the player
         private void UpdateTankState(ControlCommand cc, SocketState player)
         {
+            //Get the ID associated with the connection
             int ID = connections[player];
 
             //Get the tank and update location and projectile status
@@ -219,11 +227,17 @@ namespace TankWars
             {
                 //Update tank state
                 TankMovement(cc.GetDirection(), curTank);
+                //Change tank turret
+                curTank.AimDirection = cc.GetTurretDirection();
+                //Update world on for tank
                 serverWorld.Tanks[ID] = curTank;
             }
 
             //Check fire state
-            ProjectileCreation(cc, curTank);
+            lock (serverWorld.Projectiles)
+            {
+                ProjectileCreation(cc, curTank);
+            }
         }
 
         /// <summary>
@@ -235,27 +249,31 @@ namespace TankWars
         {
 
             //Check for wall collisions and world out of bounds
-            
 
 
+            //Each case adjusts tank orientation, and movement
             Vector2D velocity = new Vector2D(0, 0);
             switch (dir)
             {
                 case "left":
                     velocity = new Vector2D(-engineForce, 0.0);
                     tank.Location += velocity;
+                    tank.Orientation = new Vector2D(-1, 0);
                     break;
                 case "right":
                     velocity = new Vector2D(engineForce, 0.0);
                     tank.Location += velocity;
+                    tank.Orientation = new Vector2D(1, 0);
                     break;
                 case "up":
                     velocity = new Vector2D(0, -engineForce);
                     tank.Location += velocity;
+                    tank.Orientation = new Vector2D(0, -1);
                     break;
                 case "down":
                     velocity = new Vector2D(0, engineForce);
                     tank.Location += velocity;
+                    tank.Orientation = new Vector2D(0, 1);
                     break;
                 case "none":
                     break;
@@ -273,7 +291,7 @@ namespace TankWars
                 Projectile proj = new Projectile(tank.GetID(), tank.Location, turretDirection, tank.GetID());
                 lock (serverWorld.Projectiles)
                 {
-                    serverWorld.Projectiles.Add(proj.getID(), proj);
+                    serverWorld.Projectiles[proj.getID()] = proj;
                 }
             }
             else if (fireStatus == "alt")
@@ -281,13 +299,20 @@ namespace TankWars
                 // Make changes to ID of beam so two beams do not have the same ID if spawned at same time
                 Beam beam = new Beam(tank.Location, turretDirection, tank.GetID(), tank.GetID());
             }
+
         }
+
+        /// <summary>
+        /// This Method is called once per frame according to the settings.
+        /// This method will update any projectiles, powerups and beams,
+        /// then send all the information to each client in a Json message
+        /// </summary>
         private void UpdateWorld()
         {
             //Check if tank has  disconnected
 
             //Check proj collisions w/ tank or wall
-
+            UpdateProjectileState();
             //Check on powerups
 
             //Build JSON and send to each client
@@ -297,12 +322,21 @@ namespace TankWars
                 foreach (Tank t in serverWorld.Tanks.Values)
                     newWorld.Append(JsonConvert.SerializeObject(t) + "\n");
             }
-            foreach (Projectile p in serverWorld.Projectiles.Values)
-                newWorld.Append(JsonConvert.SerializeObject(p) + "\n");
+            lock (serverWorld.Projectiles)
+            {
+                foreach (Projectile p in serverWorld.Projectiles.Values)
+                {
+                    newWorld.Append(JsonConvert.SerializeObject(p) + "\n");
+                    //Remove from server world if dead
+                    if (p.Died)
+                        serverWorld.Projectiles.Remove(p.getID());
+                }
+
+            }
             //foreach (Tank t in serverWorld.Tanks.Values)
-               // newWorld.Append(JsonConvert.SerializeObject(t) + "\n");
+            // newWorld.Append(JsonConvert.SerializeObject(t) + "\n");
             //foreach (Tank t in serverWorld.Tanks.Values)
-               // newWorld.Append(JsonConvert.SerializeObject(t) + "\n");
+            // newWorld.Append(JsonConvert.SerializeObject(t) + "\n");
 
             foreach (SocketState clients in connections.Keys)
             {
@@ -310,6 +344,84 @@ namespace TankWars
             }
         }
 
+        /// <summary>
+        /// Method that checks and updates projectile location then checks if any collisions happen.
+        /// </summary>
+        private void UpdateProjectileState()
+        {
+            lock (serverWorld.Projectiles)
+            {
+                foreach (Projectile proj in serverWorld.Projectiles.Values)
+                {
+                    //Update the proj location
+                    proj.Direction.Normalize();
+                    proj.Location += proj.Direction * projectileForce;
+
+                    //Check for collision and if true, set Died property to true
+                    if (CheckForCollision(proj, 0))
+                    {
+                        serverWorld.Projectiles[proj.getID()].Died = true;
+                    }
+                    
+                }
+            }
+        }     
+
+        /// <summary>
+        /// General purpose helper method that checks if an object collides with
+        /// anything else in the world.
+        /// </summary>
+        /// <param name="o"></param> The object we want to check against everything else
+        /// <param name="objectType"></param> A integer code that tells the method what kind of object o is
+        /// <returns></returns>
+        private bool CheckForCollision(Object o, int objectType)
+        {
+            //Collision flags
+            bool collisionStatusX = false;
+            bool collisionStatusY = false;
+
+            //If o is a projectile
+            if (objectType == 0)
+            {
+                Projectile proj = o as Projectile;
+                //Check collsion against walls
+                foreach (Wall curWall in serverWorld.Walls.Values)
+                {
+                    //Get range of values for x
+                    double high = Math.Max(curWall.GetP2().GetX(), curWall.GetP1().GetX()) + 25;
+                    double low = Math.Min(curWall.GetP2().GetX(), curWall.GetP1().GetX()) - 25;
+
+                    //Check if projectile is in between range of x values
+                    if (proj.Location.GetX() < high && proj.Location.GetX() > low)
+                        collisionStatusX = true;
+
+                    //Get range of values for y
+                    high = Math.Max(curWall.GetP2().GetY(), curWall.GetP1().GetY()) + 25;
+                    low = Math.Min(curWall.GetP2().GetY(), curWall.GetP1().GetY()) - 25;
+
+                    //Check if projectile is in between range of y values
+                    if (proj.Location.GetY() < high && proj.Location.GetY() > low)
+                        collisionStatusY = true;
+
+                    //If both are within range, projectile collided with wall so return true
+                    if (collisionStatusX && collisionStatusY)
+                        return true;
+                    else //Projectile did not collide with this wall, reset flags and move on to next segment
+                    {
+                        collisionStatusY = false;
+                        collisionStatusX = false;
+                        continue;
+                    }
+                }
+
+                foreach(Tank t in serverWorld.Tanks.Values)
+
+
+
+
+            }
+            return false;
+        }
         /// <summary>
         /// Reads from the settings XML file with tags. 
         /// Has settings for frame rate, respawn rate, world size, shot cooldown, and walls.
