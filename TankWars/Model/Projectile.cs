@@ -70,7 +70,7 @@ namespace TankWars
         //Get Set property related to direction of projectile
         public Vector2D Direction
         {
-            get { return Direction; }
+            get { return orientation; }
             set { orientation = value; }
         }
 
