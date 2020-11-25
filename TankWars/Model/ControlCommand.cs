@@ -47,11 +47,19 @@ namespace TankWars
             return moving;
         }
 
+        /// <summary>
+        /// Method returns the weapon type in string
+        /// </summary>
+        /// <returns></returns>
         public string GetFire()
         {
             return fire;
         }
 
+        /// <summary>
+        /// Returns the vector2D of the turret aim direction
+        /// </summary>
+        /// <returns></returns>
         public Vector2D GetTurretDirection()
         {
             return tdir;
