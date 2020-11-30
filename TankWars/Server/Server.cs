@@ -35,6 +35,7 @@ namespace TankWars
         private int powerUpCount = 0;
         //Keep track of player ID
         private int playerNumber = 0;
+        private int projCounter = 0;
 
         /// <summary>
         /// The main entry point into the program
@@ -61,7 +62,7 @@ namespace TankWars
                 //Busy loop to delay updating the world
                 while (delayWatch.ElapsedMilliseconds < server.MSPerFrame)
                 {
-                    //Do nothing
+                    //Do nothing.  We want a delay here
                 }
                 //Reset the watch back to 0
                 delayWatch.Reset();
@@ -120,23 +121,16 @@ namespace TankWars
             //Set the new callback action
             client.OnNetworkAction = GetActionDataFromClient;
 
-            //Generate Location
-            Random randLoc = new Random();
-            int x = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
-            int y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
-
             //Get the player name
             string playerName = client.GetData().Trim('\n');
 
             //Create a new tank representing the player at a random location
-            Tank newPlayer = new Tank(playerNumber, playerName, new Vector2D((double)x, (double)y));
+            Tank newPlayer = new Tank(playerNumber, playerName, RandomLocationGenerator());
 
             //We don't spawn on walls or powerups
             while (CheckForCollision(newPlayer, 1))
             {
-                x = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
-                y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
-                newPlayer.Location = new Vector2D(x, y);
+                newPlayer.Location = new Vector2D(RandomLocationGenerator());
             }
 
             //Add player to our connections
@@ -175,6 +169,19 @@ namespace TankWars
             //Begin receive loop
             Networking.GetData(client);
 
+        }
+
+        /// <summary>
+        /// Helper method to generate random locations on the map
+        /// </summary>
+        /// <returns></returns>
+        private Vector2D RandomLocationGenerator()
+        {
+            //Generate Location
+            Random randLoc = new Random();
+            int x = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
+            int y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
+            return new Vector2D(x, y);
         }
 
         /// <summary>
@@ -302,6 +309,16 @@ namespace TankWars
             //Check for wall collisions and world out of bounds
             if (CheckForCollision(tank, 1))
                 tank.Location = oldLoc;
+
+            //wraps around to other side of the map
+            if (tank.Location.GetY() < -serverWorld.Size/2)
+                tank.Location = new Vector2D(tank.Location.GetX(), serverWorld.Size/2);
+            else if (tank.Location.GetY() > serverWorld.Size / 2)
+                tank.Location = new Vector2D(tank.Location.GetX(), -serverWorld.Size / 2);
+            else if (tank.Location.GetX() < -serverWorld.Size / 2)
+                tank.Location = new Vector2D(serverWorld.Size/2, tank.Location.GetY());
+            else if (tank.Location.GetX() > serverWorld.Size / 2)
+                tank.Location = new Vector2D(-serverWorld.Size, tank.Location.GetY());
         }
 
         /// <summary>
@@ -319,9 +336,9 @@ namespace TankWars
             if (fireStatus == "main")// Normal attack
             {
                 // Make changes to ID of projectile so two projectiles do not have the same ID if spawned at same time
-                Projectile proj = new Projectile(tank.GetID(), tank.Location, turretDirection, tank.GetID());
                 lock (serverWorld.Projectiles)
                 {
+                    Projectile proj = new Projectile(tank.GetID(), tank.Location, turretDirection, tank.GetID());
                     serverWorld.Projectiles[proj.getID()] = proj;
                 }
             }
@@ -352,27 +369,19 @@ namespace TankWars
         {
             //Variable to count the 
             frameCounter++;
-            Random randLoc = new Random();
             
             //If enough frames have passed and the number of powerups does not exceed the max, create a powerup
             if (frameCounter > 1650 && serverWorld.PowerUps.Count <= maxPowerUpNumber)
             {
-                //Get location
-                int x = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
-                int y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
-
-
                 //Create a new powerUp at a random location
-                Vector2D powerUpPos = new Vector2D(x, y);
+                Vector2D powerUpPos = new Vector2D(RandomLocationGenerator());
                 PowerUp power = new PowerUp(powerUpPos, powerUpCount);
                 powerUpCount++;
 
                 //We don't spawn on walls or tanks
                 while (CheckForCollision(power, 2))
                 {
-                    x = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
-                    y = randLoc.Next(-1 * serverWorld.Size, serverWorld.Size) / 2;
-                    power.position = new Vector2D(x, y);
+                    power.position = new Vector2D(RandomLocationGenerator());
                 }
                 //Add the the server's collection of powerups
                 lock (serverWorld.PowerUps)
@@ -544,7 +553,7 @@ namespace TankWars
                         Vector2D radius = proj.Location - t.Location;
 
                         //If distance between projectile and tank is less than 30, its a hit
-                        if (radius.Length() < 30 && proj.getID() != t.GetID())
+                        if (radius.Length() < 30 && proj.getOwner() != t.GetID())
                         {
                             //decrement tank health
                             t.HealthLevel -= 1;
@@ -557,6 +566,7 @@ namespace TankWars
                     }
                 }
             }
+
             //object is a tank
             else if (objectType == 1)
             {
@@ -612,6 +622,8 @@ namespace TankWars
                     }
                 }
             }
+
+            //object is a powerup
             else if (objectType == 2)
             {
                 PowerUp power = o as PowerUp;
