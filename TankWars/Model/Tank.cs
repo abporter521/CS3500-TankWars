@@ -65,6 +65,9 @@ namespace TankWars
         //Bool if the tank has fired
         private bool Fired;
 
+        //Counter for respawn rate
+        private int respawnTimer;
+
         /// <summary>
         /// Constructor for the tank object
         /// </summary>
@@ -176,6 +179,12 @@ namespace TankWars
             set => Fired = value;
         }
 
+        //Keeps track of when tank can respawn
+        public int WaitRespawn
+        {
+            get => respawnTimer;
+            set => respawnTimer = value;
+        }
     }
 
 }
