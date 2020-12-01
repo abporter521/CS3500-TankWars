@@ -151,6 +151,8 @@ namespace TankWars
             lock (serverWorld.Tanks)
             {
                 serverWorld.Tanks.Add(newPlayer.GetID(), newPlayer);
+                //Increase player ID number
+                playerNumber++;
             }
 
             //Create a string builder info to serialize and send all the walls
@@ -162,9 +164,6 @@ namespace TankWars
 
             //Send walls to the client
             Networking.Send(client.TheSocket, wallinfo.ToString());
-
-            //Increase player ID number
-            playerNumber++;
 
             //Empty the socket state of data
             client.ClearData();
