@@ -1,11 +1,11 @@
-﻿This is the README file for the final project of CS3500.  This project was created by team FlyBoys.  Team members are Adam Scott and Andrew Porter. 19 November 2020
+﻿This is the README file for the final project of CS3500.  This project was created by team FlyBoys.  Team members are Adam Scott and Andrew Porter. 3 December 2020
 
 
 MODEL
 Our model consisted of various classes that are found in the game.  These objects are tanks, walls, projectiles, beams, powerups, world, Vector 2D and ControlCommand.  A brief
 overview of each of these will be given.
 
-Tanks - Tank objects store all the necessary fields received by the server per PS8 instructions. This includes a living state, ID, turret direction, body direction, hitpoints, etc.
+Tanks - Tank objects store all the necessary fields received by the server per PS8 instructions. This includes a living state, ID, turret direction, body direction, hitpoints,powerUp number, fired status, and an individual frame counter, etc.
 Inside of the tank class file is a contructor with these fields.  For the purposes of this particular assignment, we are content with the only methods being in this class
 are getter and setter methods for these fields.
 
@@ -55,3 +55,37 @@ Our drawing panel has the variables that contain all the images and sounds that 
 world model.  This will draw each object in its respective drawer method.  We have some additional methods that draw the explosion sprite images at random at time of tank death, along with
 a sound byte.  We have also added sound bytes for weapon firing. For example, since we only want the firing shot to be done once per click, we have a setter method that sets a flag and allows the 
 sound byte to play.
+
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+SERVER
+
+This is the server portion of our Tank Wars game. This class handles the logic of the game and tracks and updates the locations of players, collisions of objects within the world, and sending these updates to all the connected players. These updates are sent out every frame and the frequency of these updates can be changed based on the settings file. 
+
+SERVER SETTINGS 
+The server settings are sent by the client and read by the server through an XML file. Listed below are the different settings that can be changed by the client and how they will affect the gameplay of Tank Wars.
+
+MSPerFrame - This setting alters how often the server attempts to update the world for all of it's players. This number is in miliseconds and it's default is 17.
+
+Universe Size - This settings alters how large the world is within the game. It specifically correlates to the number of units on each side of the square universe. If a tank reaches the edge of the world it wraps around to the other side. It's default is 2000
+
+FramesPerShot - This setting alters how often a tank can fire a projectile. This number is in frames and it's default setting is 80.
+
+RespawnRate - This settings alters the respawn time, in frames, of a tank once it has been killed. After the setting's value of frames the tank will respawn at a random location on the map. It's default setting is 300.
+
+Walls - This setting communicates to the server where the walls should be placed. This is done using P1 containing an x and y value (P1(x,y)) and P2 containing an x and y value (P2(x,y)). The world can contain zero or more wall sections.
+
+SERVER VALUES
+The following are a series of values that the server tracks while the program is running. These values ensure that the game runs smoothly.
+
+frameCounter - This value is created as a time using the amount of times that the world has been updated. This frameCounter is specifically used for the spawning of powerUps, once 1650 frames have passed within the world the server will spawn a powerUp. This frame number translates to a powerUp spawning every 27.5 seconds.
+
+maxPowerUpNumber - This value is the number of powerUps that can be spawned within the world at the same time. It's value is 2 meaning that there can be a maximum of 2 powerUps within the world at any time. When a tank collects one of these powerUps the server will check the frameCounter for powerUps and see if it needs to spawn another that frame. 
+
+EngineForce - This value is the distance a tank will travel every frame in the direction the player desires. This value (3) is in pixels and will move the tank 3 pixels in the desired direction of the player.
+
+projectileForce - This value is the distance a standard projectile will travel every frame in the direction of the player's tank turret. This value (25) is in pixels and will move the projectile 25 pixels in the direction of the player's tank 
+
+powerUpCount - This value is the number of powerUps currently spawned on the map. This value is used by the server in deciding whether it needs to spawn another powerUp within the world, based on the "maxPowerUpNumber" value. 
+
+playerNumber - This value is used in tracking the number of clients that are connected to the server. This number is used in the construction of each player's tank object, allowing the server to track each player's tank individually.
+
