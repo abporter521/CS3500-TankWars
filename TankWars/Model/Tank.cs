@@ -56,7 +56,15 @@ namespace TankWars
         [JsonProperty(PropertyName = "join")]
         private bool joined = false;
 
-        private int powerUpNumber = 0;
+        //Number of powerups the tank has
+        private int powerUpNumber;
+
+        //Number of frames since the tank fired
+        private int projectileCounter;
+
+        //Bool if the tank has fired
+        private bool Fired;
+
         /// <summary>
         /// Constructor for the tank object
         /// </summary>
@@ -69,6 +77,8 @@ namespace TankWars
             name = playerName;
             this.location = location;
             orientation = new Vector2D(0, -1);
+            projectileCounter = 0;
+            powerUpNumber = 0;
         }
 
         //Get method for ID 
@@ -146,10 +156,26 @@ namespace TankWars
             powerUpNumber++;
         }
 
+        //Tank used a power up
         public void UsePowerup()
         {
             powerUpNumber--;
         }
+
+        //Set up the frame counter
+        public int FrameCount
+        {
+            get => projectileCounter;
+            set => projectileCounter = value;
+        }
+
+        //Set Fire state of the tank
+        public bool HasFired
+        {
+            get => Fired;
+            set => Fired = value;
+        }
+
     }
 
 }

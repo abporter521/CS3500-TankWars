@@ -35,7 +35,6 @@ namespace TankWars
         private int powerUpCount = 0;
         //Keep track of player ID
         private int playerNumber = 0;
-        private int projCounter = 0;
 
         /// <summary>
         /// The main entry point into the program
@@ -67,6 +66,7 @@ namespace TankWars
                 //Reset the watch back to 0
                 delayWatch.Reset();
 
+                //Generate powerups if needed and update the world to the clients
                 server.GeneratePowerUp();
                 server.UpdateWorld();
             }
@@ -125,7 +125,11 @@ namespace TankWars
             string playerName = client.GetData().Trim('\n');
 
             //Create a new tank representing the player at a random location
-            Tank newPlayer = new Tank(playerNumber, playerName, RandomLocationGenerator());
+            Tank newPlayer = new Tank(playerNumber, playerName, RandomLocationGenerator())
+            {
+                //Allows the tank to fire upon spawn
+                FrameCount = framesPerShot + 1
+            };
 
             //We don't spawn on walls or powerups
             while (CheckForCollision(newPlayer, 1))
@@ -136,9 +140,12 @@ namespace TankWars
             //Add player to our connections
             lock (connections)
             {
+                //Send ID and worldsize info
+                Networking.Send(client.TheSocket, playerNumber.ToString() + "\n" + serverWorld.Size.ToString() + "\n");
                 //Add socket state to the collection of players with their ID number
                 connections.Add(client, playerNumber);
             }
+
             Console.WriteLine("Player " + playerNumber.ToString() + ": " + playerName + " has connected.");
 
             //Add player to server world
@@ -146,9 +153,6 @@ namespace TankWars
             {
                 serverWorld.Tanks.Add(newPlayer.GetID(), newPlayer);
             }
-
-            //Send ID and worldsize info
-            Networking.Send(client.TheSocket, playerNumber.ToString() + "\n" + serverWorld.Size.ToString() + "\n");
 
             //Create a string builder info to serialize and send all the walls
             StringBuilder wallinfo = new StringBuilder();
@@ -335,13 +339,20 @@ namespace TankWars
             Vector2D turretDirection = cc.GetTurretDirection();
             if (fireStatus == "main")// Normal attack
             {
-                // Make changes to ID of projectile so two projectiles do not have the same ID if spawned at same time
-                lock (serverWorld.Projectiles)
+                //Check fire cooldown
+                if (!tank.HasFired)
                 {
-                    Projectile proj = new Projectile(tank.GetID(), tank.Location, turretDirection, tank.GetID());
-                    serverWorld.Projectiles[proj.getID()] = proj;
+                    // Make changes to ID of projectile so two projectiles do not have the same ID if spawned at same time
+                    lock (serverWorld.Projectiles)
+                    {
+                        Projectile proj = new Projectile(tank.GetID(), tank.Location, turretDirection, tank.GetID());
+                        //Tank has fired so begin cooldown
+                        tank.HasFired = true;
+                        serverWorld.Projectiles[proj.getID()] = proj;
+                    }
                 }
             }
+
 
             //This is a beam attack
             else if (fireStatus == "alt")
@@ -354,6 +365,7 @@ namespace TankWars
                     //Decrement tanks powerup number
                     tank.UsePowerup();
 
+                    //Add beam to world to send message to clients
                     lock (serverWorld.Beams)
                     {
                         serverWorld.Beams.Add(beam.GetID(), beam);
@@ -482,6 +494,16 @@ namespace TankWars
                 foreach (Tank t in serverWorld.Tanks.Values)
                 {
                     newWorld.Append(JsonConvert.SerializeObject(t) + "\n");
+                    //Increment the framecounter for tank cooldown if it has fired
+                    if (t.HasFired)
+                        t.FrameCount++;
+                    //If the framecount exceeds frames per shot, we can reset and fire again
+                    if (t.FrameCount > framesPerShot)
+                    {
+                        t.FrameCount = 0;
+                        t.HasFired = false;
+                    }
+                    //Check if tank has disconnected
                     if (t.HasDisconnected)
                         serverWorld.Tanks.Remove(t.GetID());
                 }
@@ -493,7 +515,10 @@ namespace TankWars
                     newWorld.Append(JsonConvert.SerializeObject(p) + "\n");
                     //Remove from server world if dead
                     if (p.Died)
+                    {
+                        //remove projectiles from world
                         serverWorld.Projectiles.Remove(p.getID());
+                    }
                 }
 
             }
@@ -568,6 +593,10 @@ namespace TankWars
             if (objectType == 0)
             {
                 Projectile proj = o as Projectile;
+                if ((proj.Location.GetX() > serverWorld.Size / 2) || (proj.Location.GetX() < -(serverWorld.Size / 2)) || (proj.Location.GetY() > serverWorld.Size / 2) || (proj.Location.GetY() < -serverWorld.Size / 2))
+                {
+                    return true;
+                }
                 //Check collsion against walls
                 foreach (Wall curWall in serverWorld.Walls.Values)
                 {
