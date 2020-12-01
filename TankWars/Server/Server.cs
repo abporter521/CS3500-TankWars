@@ -311,12 +311,12 @@ namespace TankWars
                 tank.Location = oldLoc;
 
             //wraps around to other side of the map
-            if (tank.Location.GetY() < -serverWorld.Size/2)
-                tank.Location = new Vector2D(tank.Location.GetX(), serverWorld.Size/2);
+            if (tank.Location.GetY() < -serverWorld.Size / 2)
+                tank.Location = new Vector2D(tank.Location.GetX(), serverWorld.Size / 2);
             else if (tank.Location.GetY() > serverWorld.Size / 2)
                 tank.Location = new Vector2D(tank.Location.GetX(), -serverWorld.Size / 2);
             else if (tank.Location.GetX() < -serverWorld.Size / 2)
-                tank.Location = new Vector2D(serverWorld.Size/2, tank.Location.GetY());
+                tank.Location = new Vector2D(serverWorld.Size / 2, tank.Location.GetY());
             else if (tank.Location.GetX() > serverWorld.Size / 2)
                 tank.Location = new Vector2D(-serverWorld.Size, tank.Location.GetY());
         }
@@ -353,14 +353,27 @@ namespace TankWars
                     Beam beam = new Beam(tank.Location, turretDirection, tank.GetID(), tank.GetID());
                     //Decrement tanks powerup number
                     tank.UsePowerup();
+
                     lock (serverWorld.Beams)
                     {
                         serverWorld.Beams.Add(beam.GetID(), beam);
+                    }
+
+                    //Check if the beam kills any tanks
+                    lock (serverWorld.Tanks)
+                    {
+                        foreach (Tank t in serverWorld.Tanks.Values)
+                            if (Intersects(beam.Origin, beam.Direction, t.Location, 30))
+                            {
+                                t.HealthLevel = 0;
+                                t.HasDied = true;
+                            }
                     }
                 }
             }
 
         }
+
         /// <summary>
         /// Generates powerups every 1650 frames as default.  Will place in 
         /// server's collection of powerups.
@@ -369,7 +382,7 @@ namespace TankWars
         {
             //Variable to count the 
             frameCounter++;
-            
+
             //If enough frames have passed and the number of powerups does not exceed the max, create a powerup
             if (frameCounter > 1650 && serverWorld.PowerUps.Count <= maxPowerUpNumber)
             {
@@ -393,6 +406,47 @@ namespace TankWars
                 frameCounter = 0;
             }
         }
+
+        /// <summary>
+        /// Determines if a ray interescts a circle
+        /// </summary>
+        /// <param name="rayOrig">The origin of the ray</param>
+        /// <param name="rayDir">The direction of the ray</param>
+        /// <param name="center">The center of the circle</param>
+        /// <param name="r">The radius of the circle</param>
+        /// <returns></returns>
+        public static bool Intersects(Vector2D rayOrig, Vector2D rayDir, Vector2D center, double r)
+        {
+            // ray-circle intersection test
+            // P: hit point
+            // ray: P = O + tV
+            // circle: (P-C)dot(P-C)-r^2 = 0
+            // substituting to solve for t gives a quadratic equation:
+            // a = VdotV
+            // b = 2(O-C)dotV
+            // c = (O-C)dot(O-C)-r^2
+            // if the discriminant is negative, miss (no solution for P)
+            // otherwise, if both roots are positive, hit
+
+            double a = rayDir.Dot(rayDir);
+            double b = ((rayOrig - center) * 2.0).Dot(rayDir);
+            double c = (rayOrig - center).Dot(rayOrig - center) - r * r;
+
+            // discriminant
+            double disc = b * b - 4.0 * a * c;
+
+            if (disc < 0.0)
+                return false;
+
+            // find the signs of the roots
+            // technically we should also divide by 2a
+            // but all we care about is the sign, not the magnitude
+            double root1 = -b + Math.Sqrt(disc);
+            double root2 = -b - Math.Sqrt(disc);
+
+            return (root1 > 0.0 && root2 > 0.0);
+        }
+
         /// <summary>
         /// This Method is called once per frame according to the settings.
         /// This method will update any projectiles, powerups and beams,
