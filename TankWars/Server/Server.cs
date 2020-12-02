@@ -58,7 +58,7 @@ namespace TankWars
                 //Busy loop to delay updating the world
                 while (delayWatch.ElapsedMilliseconds < server.MSPerFrame)
                 {
-                    //Do nothing.  We want a delay here
+                    // Do nothing.  We want a delay here
                 }
                 //Reset the watch back to 0
                 delayWatch.Reset();
