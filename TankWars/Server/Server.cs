@@ -121,13 +121,20 @@ namespace TankWars
 
             //Get the player name
             string playerName = client.GetData().Trim('\n');
-
-            //Create a new tank representing the player at a random location
-            Tank newPlayer = new Tank(playerNumber, playerName, RandomLocationGenerator())
+            Tank newPlayer;
+            
+            //Prevents the player number getting reused
+            lock (connections)
             {
-                //Allows the tank to fire upon spawn
-                FrameCount = framesBetweenShot + 1
-            };
+                //Create a new tank representing the player at a random location
+                newPlayer = new Tank(playerNumber, playerName, RandomLocationGenerator())
+                {
+                    //Allows the tank to fire upon spawn
+                    FrameCount = framesBetweenShot + 1
+                };
+                //Increase player ID number
+                playerNumber++;
+            }
 
             //We don't spawn on walls or powerups
             while (CheckForCollision(newPlayer, 1))
@@ -149,9 +156,7 @@ namespace TankWars
             //Add player to server world
             lock (serverWorld.Tanks)
             {
-                serverWorld.Tanks.Add(newPlayer.GetID(), newPlayer);
-                //Increase player ID number
-                playerNumber++;
+                serverWorld.Tanks.Add(newPlayer.GetID(), newPlayer);               
             }
 
             //Create a string builder info to serialize and send all the walls
