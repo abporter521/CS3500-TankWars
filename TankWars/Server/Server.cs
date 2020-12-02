@@ -58,7 +58,7 @@ namespace TankWars
                 //Busy loop to delay updating the world
                 while (delayWatch.ElapsedMilliseconds < server.MSPerFrame)
                 {
-                    // Do nothing.  We want a delay here
+                    //Do nothing.  We want a delay here
                 }
                 //Reset the watch back to 0
                 delayWatch.Reset();
@@ -121,20 +121,13 @@ namespace TankWars
 
             //Get the player name
             string playerName = client.GetData().Trim('\n');
-            Tank newPlayer;
-            
-            //Prevents the player number getting reused
-            lock (connections)
+
+            //Create a new tank representing the player at a random location
+            Tank newPlayer = new Tank(playerNumber, playerName, RandomLocationGenerator())
             {
-                //Create a new tank representing the player at a random location
-                newPlayer = new Tank(playerNumber, playerName, RandomLocationGenerator())
-                {
-                    //Allows the tank to fire upon spawn
-                    FrameCount = framesBetweenShot + 1
-                };
-                //Increase player ID number
-                playerNumber++;
-            }
+                //Allows the tank to fire upon spawn
+                FrameCount = framesBetweenShot + 1
+            };
 
             //We don't spawn on walls or powerups
             while (CheckForCollision(newPlayer, 1))
@@ -156,7 +149,9 @@ namespace TankWars
             //Add player to server world
             lock (serverWorld.Tanks)
             {
-                serverWorld.Tanks.Add(newPlayer.GetID(), newPlayer);               
+                serverWorld.Tanks.Add(newPlayer.GetID(), newPlayer);
+                //Increase player ID number
+                playerNumber++;
             }
 
             //Create a string builder info to serialize and send all the walls
@@ -520,7 +515,7 @@ namespace TankWars
                 foreach (Tank t in serverWorld.Tanks.Values)
                 {
                     newWorld.Append(JsonConvert.SerializeObject(t) + "\n");
-                    
+
                     //Increment the framecounter for tank cooldown if it has fired
                     if (t.HasFired)
                         t.FrameCount++;
@@ -641,9 +636,9 @@ namespace TankWars
                 Projectile proj = o as Projectile;
 
                 //returns true if projectile if it leaves world
-                if ((proj.Location.GetX() > serverWorld.Size / 2) || (proj.Location.GetX() < -(serverWorld.Size / 2)) || (proj.Location.GetY() > serverWorld.Size / 2) || (proj.Location.GetY() < -serverWorld.Size / 2))              
+                if ((proj.Location.GetX() > serverWorld.Size / 2) || (proj.Location.GetX() < -(serverWorld.Size / 2)) || (proj.Location.GetY() > serverWorld.Size / 2) || (proj.Location.GetY() < -serverWorld.Size / 2))
                     return true;
-                
+
                 //Check collsion against walls
                 foreach (Wall curWall in serverWorld.Walls.Values)
                 {
@@ -805,9 +800,9 @@ namespace TankWars
                         Vector2D radius = power.position - t.Location;
 
                         //If distance between powerUp and tank is less than 30, it can't spawn
-                        if (radius.Length() < 30)                  
+                        if (radius.Length() < 30)
                             return true;
-                        
+
                     }
                 }
             }
@@ -893,7 +888,7 @@ namespace TankWars
                                     reader.Read();
                                     string ressurrectionRate = reader.Value;
                                     if (int.TryParse(ressurrectionRate, out int imAlive))
-                                        respawnRate = imAlive;                                   
+                                        respawnRate = imAlive;
                                     break;
 
                                 case "Wall":
