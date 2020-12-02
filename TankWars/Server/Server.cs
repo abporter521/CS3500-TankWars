@@ -191,6 +191,7 @@ namespace TankWars
                     int tankID = connections[connectionToClient];
                     serverWorld.Tanks[tankID].HasDisconnected = true;
                     serverWorld.Tanks[tankID].HasDied = true;
+                    connections.Remove(connectionToClient);
                     return;
                 }
             }

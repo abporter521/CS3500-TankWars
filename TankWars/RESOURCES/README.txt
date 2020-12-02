@@ -59,7 +59,10 @@ sound byte to play.
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------
 SERVER
 
-This is the server portion of our Tank Wars game. This class handles the logic of the game and tracks and updates the locations of players, collisions of objects within the world, and sending these updates to all the connected players. These updates are sent out every frame and the frequency of these updates can be changed based on the settings file. 
+This is the server portion of our Tank Wars game. This class handles the logic of the game and tracks and updates the locations of players, collisions of objects within the world, and sending these updates to all the connected players. 
+These updates are sent out every frame and the frequency of these updates can be changed based on the settings file.  We have set up the server to display when setup is finished.  When the 
+server console says "Server Initiated" is the point where clients can begin connecting.  On each client connect, there player ID and name will display in the console window. When a player disconnects,
+It will also display on the server console.
 
 SERVER SETTINGS 
 The server settings are sent by the client and read by the server through an XML file. Listed below are the different settings that can be changed by the client and how they will affect the gameplay of Tank Wars.
