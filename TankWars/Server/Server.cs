@@ -343,7 +343,7 @@ namespace TankWars
             else if (tank.Location.GetX() < -serverWorld.Size / 2)
                 tank.Location = new Vector2D(serverWorld.Size / 2, tank.Location.GetY());
             else if (tank.Location.GetX() > serverWorld.Size / 2)
-                tank.Location = new Vector2D(-serverWorld.Size, tank.Location.GetY());
+                tank.Location = new Vector2D((-serverWorld.Size / 2), tank.Location.GetY());
         }
 
         /// <summary>
